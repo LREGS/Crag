@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -27,7 +28,7 @@ import (
 // }
 // maybe worth trying to unmarshall the json into structs to make it easier to pass around and access the data vs a map
 
-func GetForecast(coords []float32) map[string]interface{} {
+func GetForecast(coords []float32, headers map[string]interface{}) map[string]interface{} {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("error loading env")
@@ -40,9 +41,12 @@ func GetForecast(coords []float32) map[string]interface{} {
 	if err != nil {
 		log.Println(err)
 	}
-	req.Header.Add("X-IBM-Client-Id", os.Getenv("CLIENT_ID"))
-	req.Header.Add("X-IBM-Client-Secret", os.Getenv("CLIENT_SECRET"))
-	req.Header.Add("accept", "application/json")
+
+	jsonHeaders, err := json.Marshal(headers)
+	if err != nil {
+		log.Println(err)
+	}
+	req.Header.Add("Headers", string(jsonHeaders))
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -69,4 +73,33 @@ func defaultClient() *http.Client {
 	return &http.Client{
 		Timeout: 30 * time.Second,
 	}
+}
+
+func createMetOfficeRequest(coords []float32, apiUrl string) (*http.Request, error) {
+
+}
+func sendRequest(req *http.Request, client *http.Client) (*http.Response, error) {
+}
+func parseResponse(res *http.Response) (map[string]interface{}, error) {
+}
+func KGetForecast(coords []float32, headers map[string]interface{}) map[string]interface{} {
+}
+
+func GetEnv(variables []string) (map[string]string, error) {
+
+	if len(variables) == 0 {
+		return nil, errors.New("No variables passed to GetEnv Function")
+	}
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("error loading env")
+	}
+
+	envVariables := make(map[string]string)
+
+	for _, variable := range variables {
+		envVariables[variable] = os.Getenv(variable)
+	}
+	return envVariables, nil
 }
