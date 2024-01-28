@@ -6,11 +6,12 @@ import (
 	"io"
 	"log"
 	"net/http"
-	headers "workspaces/github.com/lregs/Crag/headers"
+
+	// headers "workspaces/github.com/lregs/Crag/headers"
 	helpers "workspaces/github.com/lregs/Crag/helper"
 )
 
-func GetForecast(url string, headers headers.HttpHeaders, client *http.Client) (map[string]interface{}, error) {
+func GetForecast(url string, headers map[string]string, client *http.Client) (map[string]interface{}, error) {
 
 	//eventually req functionality will be in a router, so when an end-point is hit, a request is made and sent to getForecast that returns a response
 
@@ -29,18 +30,23 @@ func GetForecast(url string, headers headers.HttpHeaders, client *http.Client) (
 
 }
 
-func createRequest(apiUrl string, headers headers.HttpHeaders) (*http.Request, error) {
+func createRequest(apiUrl string, headers map[string]string) (*http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	jsonHeaders, err := json.Marshal(headers)
-	if err != nil {
-		return nil, err
+	// jsonHeaders, err := json.Marshal(headers)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// print(jsonHeaders[0])
+	// req.Header.Add("Headers", string(jsonHeaders))
+	// fmt.Println(req.Header)
+	for key, value := range headers {
+		req.Header.Add(key, value)
 	}
-	req.Header.Add("Headers", string(jsonHeaders))
 
 	return req, nil
 

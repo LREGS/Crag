@@ -22,11 +22,11 @@ func main() {
 	url, err := helpers.MetOfficeURL(coords)
 	helpers.CheckError(err)
 
-	headers := h.MetOfficeHeaders{}
-	headers.ReturnHeaders()
+	headers := h.ReturnHeaders()
+
 	fmt.Println(headers)
 
-	f, err := utils.GetForecast(url, &headers, client)
+	f, err := utils.GetForecast(url, headers, client)
 
 	fmt.Println(f)
 
