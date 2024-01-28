@@ -1,25 +1,33 @@
 package main
 
+// "fmt"
+// "log"
+// "os"
+
 import (
 	"fmt"
-	// "log"
-	// "os"
-
-	// "github.com/joho/godotenv"
-	"workspaces/github.com/lregs/Crag/utils"
+	client "workspaces/github.com/lregs/Crag/client"
+	h "workspaces/github.com/lregs/Crag/headers"
+	helpers "workspaces/github.com/lregs/Crag/helper"
+	utils "workspaces/github.com/lregs/Crag/utils"
 )
 
+// "github.com/joho/godotenv"
+// "workspaces/github.com/lregs/Crag/utils"
+
 func main() {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Fatal("error loading .env")
-	// }
-	// id := os.Getenv("CLIENT_ID")
-	// secret := os.Getenv("CLIENT_SECRET")
+	client := client.DefaultClient()
+	coords := []float32{53.122677, -4.013838}
 
-	// fmt.Printf(id, secret)
-	var coords = []float32{53.089600, -4.049700}
+	url, err := helpers.MetOfficeURL(coords)
+	helpers.CheckError(err)
 
-	forecast := utils.GetForecast(coords)
-	fmt.Print(forecast["features"])
+	headers := h.MetOfficeHeaders{}
+	headers.ReturnHeaders()
+	fmt.Println(headers)
+
+	f, err := utils.GetForecast(url, &headers, client)
+
+	fmt.Println(f)
+
 }

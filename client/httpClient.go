@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func defaultClient() *http.Client {
+func DefaultClient() *http.Client {
 	return &http.Client{
 		Timeout: 30 * time.Second,
 	}

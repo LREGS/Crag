@@ -2,104 +2,74 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"time"
-
-	"github.com/joho/godotenv"
+	headers "workspaces/github.com/lregs/Crag/headers"
+	helpers "workspaces/github.com/lregs/Crag/helper"
 )
 
-// type ForecastData struct{
-//   Features []Feature `json:"features"`
+func GetForecast(url string, headers headers.HttpHeaders, client *http.Client) (map[string]interface{}, error) {
 
-// }
-// type Feature struct{
-//   Geometry...
-//   TimeSeries []TimeSeriesEnty
-// }
+	//eventually req functionality will be in a router, so when an end-point is hit, a request is made and sent to getForecast that returns a response
 
-// type TimeSeriesEntry struct{
-//   temp
-//   precipitation etc
-// }
-// maybe worth trying to unmarshall the json into structs to make it easier to pass around and access the data vs a map
+	//
 
-func GetForecast(coords []float32, headers map[string]interface{}) map[string]interface{} {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("error loading env")
-	}
-	client := defaultClient()
+	req, err := createRequest(url, headers)
+	helpers.CheckError(err)
 
-	apiUrl := fmt.Sprintf(("https://api-metoffice.apiconnect.ibmcloud.com/v0/forecasts/point/hourly?latitude=%f&longitude=%f"), coords[1], coords[0])
+	res, err := sendRequest(req, client)
+	helpers.CheckError(err)
+
+	Forecast, err := parseResponse(res)
+	helpers.CheckError(err)
+
+	return Forecast, nil
+
+}
+
+func createRequest(apiUrl string, headers headers.HttpHeaders) (*http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
 	jsonHeaders, err := json.Marshal(headers)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 	req.Header.Add("Headers", string(jsonHeaders))
 
+	return req, nil
+
+}
+
+func sendRequest(req *http.Request, client *http.Client) (*http.Response, error) {
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
 		log.Println(fmt.Sprintf("Status %v", res.Status))
 	}
 
+	return res, nil
+}
+
+func parseResponse(res *http.Response) (map[string]interface{}, error) {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
 
-	var forecastData map[string]interface{}
-	err = json.Unmarshal(body, &forecastData)
+	var ResponseData = make(map[string]interface{})
+	err = json.Unmarshal(body, &ResponseData)
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
-	return forecastData
-}
-
-func defaultClient() *http.Client {
-	return &http.Client{
-		Timeout: 30 * time.Second,
-	}
-}
-
-func createMetOfficeRequest(coords []float32, apiUrl string) (*http.Request, error) {
-
-}
-func sendRequest(req *http.Request, client *http.Client) (*http.Response, error) {
-}
-func parseResponse(res *http.Response) (map[string]interface{}, error) {
-}
-func KGetForecast(coords []float32, headers map[string]interface{}) map[string]interface{} {
-}
-
-func GetEnv(variables []string) (map[string]string, error) {
-
-	if len(variables) == 0 {
-		return nil, errors.New("No variables passed to GetEnv Function")
-	}
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("error loading env")
-	}
-
-	envVariables := make(map[string]string)
-
-	for _, variable := range variables {
-		envVariables[variable] = os.Getenv(variable)
-	}
-	return envVariables, nil
+	return ResponseData, nil
 }
