@@ -4,16 +4,18 @@ import (
 	h "workspaces/github.com/lregs/Crag/helper"
 )
 
-type HttpHeaders interface {
-	ReturnHeaders()
-}
+// type HttpHeaders interface {
+// 	ReturnHeaders()
+// }
 
-type MetOfficeHeaders struct {
-	CLIENT_ID     string `json:"X-IBM-Client-Id"`
-	CLIENT_SECRET string `json:"X-IBM-Client-Secret"`
-	Accept        string `json:"accept"`
-}
+// type MetOfficeHeaders struct {
+// 	CLIENT_ID     string `json:"X-IBM-Client-Id"`
+// 	CLIENT_SECRET string `json:"X-IBM-Client-Secret"`
+// 	Accept        string `json:"accept"`
+// }
 
+// simplest way now but maybe we want to make other requests or expand headers and would
+// want structs/interfaces I dont know
 func ReturnHeaders() map[string]string {
 	envVariables, err := h.GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
 	h.CheckError(err)

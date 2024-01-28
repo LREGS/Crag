@@ -37,13 +37,6 @@ func createRequest(apiUrl string, headers map[string]string) (*http.Request, err
 		return nil, err
 	}
 
-	// jsonHeaders, err := json.Marshal(headers)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// print(jsonHeaders[0])
-	// req.Header.Add("Headers", string(jsonHeaders))
-	// fmt.Println(req.Header)
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
