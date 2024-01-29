@@ -1,9 +1,5 @@
 package helpers
 
-import (
-	h "workspaces/github.com/lregs/Crag/helper"
-)
-
 // type HttpHeaders interface {
 // 	ReturnHeaders()
 // }
@@ -17,8 +13,8 @@ import (
 // simplest way now but maybe we want to make other requests or expand headers and would
 // want structs/interfaces I dont know
 func ReturnHeaders() map[string]string {
-	envVariables, err := h.GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
-	h.CheckError(err)
+	envVariables, err := GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
+	CheckError(err)
 
 	// m.CLIENT_ID = envVariables[0]
 	// m.CLIENT_SECRET = envVariables[1]
