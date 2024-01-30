@@ -42,13 +42,6 @@ func main() {
 
 	forecastsToGet := getCragCoords()
 
-<<<<<<< HEAD
-	headers := h.ReturnHeaders()
-
-	fmt.Println(headers)
-
-	f, err := utils.GetForecast(url, headers, client)
-=======
 	for _, value := range *forecastsToGet {
 		url, err := helpers.MetOfficeURL(value)
 		helpers.CheckError(err)
@@ -58,7 +51,6 @@ func main() {
 	}
 	// f, err := utils.GetForecast(url, headers, client)
 	// fmt.Println(f.Features[0].Properties.TimeSeries)
->>>>>>> forecast_routines
 
 	http.ListenAndServe(":8080", r)
 
