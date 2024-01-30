@@ -1,4 +1,7 @@
-package types
+package data
+
+//uses the defined coords from the crags saved within the db to return a weather forecast,
+//and any recent comments made about the weather
 
 type TimeSeriesData struct {
 	Time                      string  `json:"time"`
