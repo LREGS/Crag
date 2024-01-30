@@ -4,18 +4,18 @@ type Crag struct {
 	Id       int
 	Name     string
 	location []float64
-	Climbs   []Climb
-	Forecast Forecast
 }
 
 type Climb struct {
-	Id   int
-	Name string
-	Crag string
+	Id     int
+	Name   string
+	Grade  string
+	CragID int
 }
 
 type Report struct {
 	Id      int
 	Content string
 	Author  string
+	CragID  int
 }
