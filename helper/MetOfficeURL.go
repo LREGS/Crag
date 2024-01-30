@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func MetOfficeURL(coords []float32) (string, error) {
+func MetOfficeURL(coords []float64) (string, error) {
 	//long[0],lat[1]
 	if len(coords) > 2 {
 		return "", errors.New("Too many arguments provided in coords")
