@@ -1,27 +1,30 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
+	_ "github.com/lib/pq"
+
 	client "workspaces/github.com/lregs/Crag/client"
 	helpers "workspaces/github.com/lregs/Crag/helper"
-
-	// helpers "workspaces/github.com/lregs/Crag/helper"
 
 	"workspaces/github.com/lregs/Crag/utils"
 
 	"github.com/go-chi/chi/v5"
 )
 
-type Coordinates struct {
-	Milestone  []float64 `json:"milestone"`
-	Gorlan     []float64 `json:"gorlan"`
-	Elephant   []float64 `json:"elephant"`
-	PortYsgo   []float64 `json:"Port Ysgo"`
-	Cratcliffe []float64 `json:"cratcliffe"`
+var Db *sql.DB
+
+func init() {
+	DbUsername := os.Getenv("DB_USERNAME")
+	DbPassword := os.GetEnv("DB_PASSWORD")
+
+	var err error
+	db, err = sql.Open("post")
 }
 
 func main() {

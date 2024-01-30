@@ -1,3 +1,7 @@
+drop table crag cascade if extists; 
+drop table climb; 
+drop table report;
+
 create table crag(
     Id          serial primary key, 
     Name        text, 
@@ -9,11 +13,11 @@ create table climb(
     Name        varchar(255),
     Grade       varchar(255),
     CragID      integer references crag(Id)
-)
+);
 
 create table report(
     Id          serial primary key, 
     Content     varchar(255),
     Author      varchar(255),
     CragID      integer references crag(Id)
-)
+);
