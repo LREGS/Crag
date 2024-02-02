@@ -21,10 +21,13 @@ var Db *sql.DB
 
 func init() {
 	DbUsername := os.Getenv("DB_USERNAME")
-	DbPassword := os.GetEnv("DB_PASSWORD")
+	DbPassword := os.Getenv("DB_PASSWORD")
 
 	var err error
-	db, err = sql.Open("post")
+	Db, err = sql.Open("postgres", fmt.Sprintf("user=%s dbname=crag password=%s sslmode=disable", DbUsername, DbPassword))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
