@@ -41,23 +41,30 @@ func GetCrag(id int, db *sql.DB) (crag Crag, err error) {
 	crag.Reports = []Report{}
 	err = db.QueryRow("select id, Name, Location from crag where id = $1", id).Scan(&crag.Id, &crag.Name, &crag.Location)
 
-	rows, err := db.Query("select Id, Content, Author from Report where CragID = $1", id)
+	reportRows, err := db.Query("select Id, Content, Author from Report where CragID = $1", id)
+	climbRows, err := db.Query("select Id, Name, Grade from climb where CragID = $1", id)
 	helpers.CheckError(err)
 
-	for rows.Next() {
+	for reportRows.Next() {
 		report := Report{Crag: &crag}
-		err = rows.Scan(&report.Id, &report.Author, &report.Content)
-		helpers.CheckError(err)
+
+		reportErr := reportRows.Scan(&report.Id, &report.Author, &report.Content)
+		helpers.CheckError(reportErr)
 		crag.Reports = append(crag.Reports, report)
+
 	}
-	rows.Close()
+	reportRows.Close()
 
-	//seperate the two functions and just have the results returned or pass them a pointer to the crag and edit them in the functions.
-	// mabe they can just be functions inside of this function because either way I cannot do rows twice in this function I dont think
+	for climbRows.Next() {
+		climbs := Climb{Crag: &crag}
 
-	rows, err := db.Query("select Id, Name, Grade from climb where CragID = $1", id)
-	helpers.CheckError(err)
+		climbsErr := climbRows.Scan(&climbs.Id, &climbs.Name, climbs.Grade)
+		helpers.CheckError(climbsErr)
+		crag.Climbs = append(crag.Climbs, climbs)
+	}
+	climbRows.Close()
 
+	return crag, nil
 }
 
 func (Report *Report) Create(db *sql.DB) (err error) {
