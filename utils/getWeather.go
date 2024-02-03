@@ -8,15 +8,11 @@ import (
 	"net/http"
 
 	// headers "workspaces/github.com/lregs/Crag/headers"
+	data "workspaces/github.com/lregs/Crag/data"
 	helpers "workspaces/github.com/lregs/Crag/helper"
-	t "workspaces/github.com/lregs/Crag/types"
 )
 
-<<<<<<< HEAD
-func GetForecast(url string, headers map[string]string, client *http.Client) (map[string]interface{}, error) {
-=======
-func GetForecast(url string, headers map[string]string, client *http.Client) (t.Forecast, error) {
->>>>>>> forecast_routines
+func GetForecast(url string, headers map[string]string, client *http.Client) (data.Forecast, error) {
 
 	//eventually req functionality will be in a router, so when an end-point is hit, a request is made and sent to getForecast that returns a response
 
@@ -42,7 +38,6 @@ func createRequest(apiUrl string, headers map[string]string) (*http.Request, err
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	// jsonHeaders, err := json.Marshal(headers)
 	// if err != nil {
 	// 	return nil, err
@@ -50,8 +45,6 @@ func createRequest(apiUrl string, headers map[string]string) (*http.Request, err
 	// print(jsonHeaders[0])
 	// req.Header.Add("Headers", string(jsonHeaders))
 	// fmt.Println(req.Header)
-=======
->>>>>>> forecast_routines
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
@@ -72,12 +65,12 @@ func sendRequest(req *http.Request, client *http.Client) (*http.Response, error)
 	return res, nil
 }
 
-func parseResponse(res *http.Response) (t.Forecast, error) {
+func parseResponse(res *http.Response) (data.Forecast, error) {
 	body, err := io.ReadAll(res.Body)
 	helpers.CheckError(err)
 
 	// var ResponseData = make(map[string]interface{})
-	var Forecast t.Forecast
+	var Forecast data.Forecast
 
 	err = json.Unmarshal(body, &Forecast)
 	helpers.CheckError(err)
