@@ -5,7 +5,8 @@ drop table report;
 create table crag(
     Id          serial primary key, 
     Name        text, 
-    location    point[],
+    Latitude double precision,
+    Longitude double precision
 );
 
 create table climb(
