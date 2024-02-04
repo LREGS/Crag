@@ -2,12 +2,14 @@ package data
 
 import (
 	"database/sql"
+	"strings"
+
+	"strconv"
+
+	helpers "workspaces/github.com/lregs/Crag/helper"
 
 	_ "github.com/lib/pq"
 )
-
-//uses the defined coords from the crags saved within the db to return a weather forecast,
-//and any recent comments made about the weather
 
 type TimeSeriesData struct {
 	Time                      string  `json:"time"`
@@ -118,4 +120,52 @@ func (forecast *DBForecast) Create(db *sql.DB) (err error) {
 		forecast.Latitude, forecast.Longitude).Scan(&forecast.Id)
 
 	return
+}
+
+func GetForecast(Id int, db *sql.DB) (forecast DBForecast, err error) {
+	forecast = DBForecast{}
+
+	query := `
+		select Id, 
+		Time,
+		ScreenTemperature,
+		FeelsLikeTemp,
+		WindSpeed,
+		WindDirection,
+		totalPrecitipitation,
+		ProbofPrecipitation,
+		Latitude,
+		Longitude
+		from forecast where id = $1"
+		)
+	`
+
+	err = db.QueryRow(query, Id).Scan(&forecast.Time, &forecast.ScreenTemperature,
+		&forecast.FeelsLikeTemp, &forecast.WindSpeed, &forecast.WindDirection,
+		&forecast.totalPrecipAmount, &forecast.ProbOfPrecipitation,
+		&forecast.Latitude, &forecast.Longitude)
+
+	return forecast, nil
+
+}
+
+func UpdateForecast(Id int, db *sql.DB, updates map[string]interface{}) (err error) {
+
+	query := "update forcast set "
+
+	params := make([]interface{}, 0)
+	i := 1
+
+	for key, value := range updates {
+		query += key + " = $" + strconv.Itoa(i) + ","
+		params = append(params, value)
+	}
+
+	query = strings.TrimSuffix(query, ",")
+
+	query += " Where id = $1"
+
+	_, err = db.Exec(query, append(params, Id)...)
+	helpers.CheckError(err)
+
 }
