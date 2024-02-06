@@ -14,11 +14,6 @@ import (
 // 	Accept        string `json:"accept"`
 // }
 
-<<<<<<< HEAD
-=======
-// simplest way now but maybe we want to make other requests or expand headers and would
-// want structs/interfaces I dont know
->>>>>>> forecast_routines
 func ReturnHeaders() map[string]string {
 	envVariables, err := h.GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
 	h.CheckError(err)

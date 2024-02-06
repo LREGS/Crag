@@ -15,6 +15,7 @@ type Crag struct {
 	Longitude float64
 	Climbs    []Climb  //many to one relationship not db field
 	Reports   []Report //many to one relationship not db field
+	Forecast []Forecast
 }
 
 type Climb struct {
@@ -32,7 +33,6 @@ type Report struct {
 }
 
 func (crag *Crag) Create(db *sql.DB) (err error) {
-	err = db.QueryRow("insert into crag (Name, Latitude, Longitude) values($1, $2, $3) returning id", crag.Name, crag.Latitude, crag.Longitude).Scan(&crag.Id)
 	return
 }
 
@@ -78,7 +78,7 @@ func (crag *Crag) UpdateCrag(db *sql.DB) (err error) {
 }
 
 func (crag *Crag) DeleteCrag(db *sql.DB) (err error) {
-	_, err = db.Exec("delet from crag where id = $1", crag.Id)
+	_, err = db.Exec("delete from crag where id = $1", crag.Id)
 	return
 }
 
