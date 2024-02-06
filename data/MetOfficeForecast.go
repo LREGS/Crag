@@ -149,7 +149,7 @@ func GetForecast(Id int, db *sql.DB) (forecast DBForecast, err error) {
 
 }
 
-func UpdateForecast(Id int, db *sql.DB, updates map[string]interface{}) (err error) {
+func (forecast *DBForecast) UpdateForecast(Id int, db *sql.DB, updates map[string]interface{}) (err error) {
 
 	query := "update forcast set "
 
@@ -165,7 +165,15 @@ func UpdateForecast(Id int, db *sql.DB, updates map[string]interface{}) (err err
 
 	query += " Where id = $1"
 
+	//not sure this works but lets see
 	_, err = db.Exec(query, append(params, Id)...)
 	helpers.CheckError(err)
 
+	return nil
+
+}
+
+func (forecast *DBForecast) DeleteForecast(Id int, db *sql.DB) (err error) {
+	_, err = db.Exec("delete from forecast where id = $1", forecast.Id)
+	return
 }

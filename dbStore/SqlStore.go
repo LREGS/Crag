@@ -16,6 +16,12 @@ type SqlStore struct {
 	//Replica
 	//Context
 	//RWMutex
+
+	stores SqlStoreStores
+}
+
+type SqlStoreStores struct {
+	forecast ForecastStore
 }
 
 func New() (*SqlStore, error) {
@@ -26,6 +32,8 @@ func New() (*SqlStore, error) {
 	if err != nil {
 		return nil, errors.New("error starting connection")
 	}
+	store.stores.forecast = newSqlForecastStore(store)
+
 	return store, nil
 }
 
@@ -39,4 +47,8 @@ func (ss *SqlStore) initConnection() error {
 		panic(err)
 	}
 	return err
+}
+
+func (ss *SqlStore) GetMasterX() *sql.DB {
+	return ss.masterX
 }
