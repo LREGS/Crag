@@ -15,7 +15,7 @@ type Crag struct {
 	Longitude float64
 	Climbs    []Climb  //many to one relationship not db field
 	Reports   []Report //many to one relationship not db field
-	Forecast []Forecast
+	Forecast  []Forecast
 }
 
 type Climb struct {
