@@ -8,19 +8,15 @@ import (
 )
 
 type Server struct {
-	RootRouter *mux.router
+	RootRouter *mux.Router
 
 	//Router for API
-	Router *mux.router
+	Router *mux.Router
 
 	Server *http.Server
 
 	//storage layer for the server
 	store *store.SqlStore
-}
-
-func (s *Server) setStore() store.SqlStore {
-
 }
 
 func NewServer() *Server {

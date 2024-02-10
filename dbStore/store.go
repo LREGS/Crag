@@ -5,13 +5,12 @@ package dbStore
 
 type ForecastStore interface {
 	StoreForecast()
-	GetForecast()
+	GetForecastByID()
 	UpdateForecast()
 	DeleteForecast()
 	GetForecastByDate()
 	GetForecastByDryest()
 	GetOldestForecast()
-
 }
 
 //store needs init 	store.stores.user = newSqlUserStore(store, metrics)

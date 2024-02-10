@@ -32,6 +32,8 @@ func New() (*SqlStore, error) {
 	if err != nil {
 		return nil, errors.New("error starting connection")
 	}
+
+	// inits the Forecast store
 	store.stores.forecast = newSqlForecastStore(store)
 
 	return store, nil
@@ -47,6 +49,7 @@ func (ss *SqlStore) initConnection() error {
 		panic(err)
 	}
 	return err
+
 }
 
 func (ss *SqlStore) GetMasterX() *sql.DB {

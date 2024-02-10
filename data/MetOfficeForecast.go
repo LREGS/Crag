@@ -65,7 +65,7 @@ type DBForecast struct {
 	FeelsLikeTemp       float64
 	WindSpeed           float64
 	WindDirection       float64
-	totalPrecipAmount   float64
+	TotalPrecipAmount   float64
 	ProbOfPrecipitation float64
 	Latitude            float64
 	Longitude           float64
@@ -85,7 +85,7 @@ func MarshalForecastToDB(cragID int, forecast Forecast) (DBForecast, error) {
 		FeelsLikeTemp:       TimeSeries.FeelsLikeTemperature,
 		WindSpeed:           TimeSeries.WindSpeed10m,
 		WindDirection:       float64(TimeSeries.WindDirectionFrom10m),
-		totalPrecipAmount:   TimeSeries.TotalPrecipAmount,
+		TotalPrecipAmount:   TimeSeries.TotalPrecipAmount,
 		ProbOfPrecipitation: TimeSeries.TotalPrecipAmount,
 		Latitude:            Latitude,
 		Longitude:           Longitude,
@@ -116,10 +116,10 @@ func (forecast *DBForecast) Create(db *sql.DB) (err error) {
 	`
 	err = db.QueryRow(query, forecast.Time, forecast.ScreenTemperature,
 		forecast.FeelsLikeTemp, forecast.WindSpeed, forecast.WindDirection,
-		forecast.totalPrecipAmount, forecast.ProbOfPrecipitation,
+		forecast.TotalPrecipAmount, forecast.ProbOfPrecipitation,
 		forecast.Latitude, forecast.Longitude).Scan(&forecast.Id)
 
-	return
+	return nil
 }
 
 func GetForecast(Id int, db *sql.DB) (forecast DBForecast, err error) {
@@ -142,7 +142,7 @@ func GetForecast(Id int, db *sql.DB) (forecast DBForecast, err error) {
 
 	err = db.QueryRow(query, Id).Scan(&forecast.Time, &forecast.ScreenTemperature,
 		&forecast.FeelsLikeTemp, &forecast.WindSpeed, &forecast.WindDirection,
-		&forecast.totalPrecipAmount, &forecast.ProbOfPrecipitation,
+		&forecast.TotalPrecipAmount, &forecast.ProbOfPrecipitation,
 		&forecast.Latitude, &forecast.Longitude)
 
 	return forecast, nil
