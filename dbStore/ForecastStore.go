@@ -105,6 +105,7 @@ func (fs SqlForecastStore) GetMultipleForecastByID(Ids []int) (map[int][]interfa
 func (fs SqlForecastStore) UpdateForecast() {
 	return
 }
+
 func (fs SqlForecastStore) DeleteForecast(Id int) error {
 	_, err := fs.masterX.Query("delete from forecast where id = $1", Id)
 	if err != nil {
@@ -112,14 +113,40 @@ func (fs SqlForecastStore) DeleteForecast(Id int) error {
 	}
 	return nil
 }
-func (fs SqlForecastStore) GetForecastByDate() {
-	return
+func (fs SqlForecastStore) GetForecastByDate(time string, id int) data.DBForecast {
+
+	forecast := data.DBForecast{ID: id}
+
+	query := `
+		select Id, 
+		ScreenTemperature,
+		FeelsLikeTemp,
+		WindSpeed,
+		WindDirection,
+		totalPrecitipitation,
+		ProbofPrecipitation,
+		Latitude,
+		Longitude
+		from forecast where id = $1 AND y = $2"
+		)
+	`
+
+	err = fs.SqlStore.masterX.QueryRow(query, id, time).Scan(
+		&forecast.Time,
+		&forecast.ScreenTemperature,
+		&forecast.FeelsLikeTemp,
+		&forecast.WindSpeed,
+		&forecast.WindDirection,
+		&forecast.TotalPrecipAmount,
+		&forecast.ProbOfPrecipitation,
+		&forecast.Latitude,
+		&forecast.Longitude)
+
+	return forecast
 }
-func (fs SqlForecastStore) GetForecastByDryest() {
-	return
-}
-func (fs SqlForecastStore) GetOldestForecast() {
-	return
+
+func (fs SqlForecastStore) GetOldestForecast(date string, Id int) data.DBForecast {
+	err := fs.SqlStore.masterX.QueryRow("")
 }
 func (fs SqlForecastStore) MarshalForecastToDB(forecast data.Forecast) (data.DBForecast, error) {
 	//why error if im not handling case where there is an error?
@@ -144,3 +171,27 @@ func (fs SqlForecastStore) MarshalForecastToDB(forecast data.Forecast) (data.DBF
 	return forecastDB, nil
 
 }
+
+// func (fs SqlForecastStore) GetForecastByValues(Id int, values []string) (data.DBForecast, error){
+
+// 	// not sure if I should use naked interfaces here because of the lack of type safety
+// 	var returnedValues interface{}
+
+// 	forecastByValue := make(map[int]interface{})
+// 	query := "select"
+
+// 	for _, value := range values {
+// 		if value == values[(len(values) - 1)]{
+// 			query += " " + value
+// 		}
+// 		query += " " + value + ","
+// 	}
+
+// 	query += " where id = $1"
+
+// 	_, err := fs.SqlStore.masterX.Exec(query, Id)
+// 	if err != nil{
+// 		return nil, err
+// 	}
+
+// }
