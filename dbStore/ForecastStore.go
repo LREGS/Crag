@@ -1,5 +1,7 @@
 package dbStore
 
+//we want to find a way of cleaning the database every x amount of days to remove old forecasts
+
 import (
 	"workspaces/github.com/lregs/Crag/data"
 )
@@ -113,12 +115,12 @@ func (fs SqlForecastStore) DeleteForecast(Id int) error {
 	}
 	return nil
 }
-func (fs SqlForecastStore) GetForecastByDate(time string, id int) data.DBForecast {
+func (fs SqlForecastStore) GetForecastByDate(time string, id int) (err error, forecast data.DBForecast) {
 
-	forecast := data.DBForecast{ID: id}
+	forecast = data.DBForecast{Id: id}
 
 	query := `
-		select Id, 
+		select, 
 		ScreenTemperature,
 		FeelsLikeTemp,
 		WindSpeed,
@@ -127,7 +129,7 @@ func (fs SqlForecastStore) GetForecastByDate(time string, id int) data.DBForecas
 		ProbofPrecipitation,
 		Latitude,
 		Longitude
-		from forecast where id = $1 AND y = $2"
+		from forecast where id = $1 AND time = $2"
 		)
 	`
 
@@ -142,12 +144,9 @@ func (fs SqlForecastStore) GetForecastByDate(time string, id int) data.DBForecas
 		&forecast.Latitude,
 		&forecast.Longitude)
 
-	return forecast
+	return nil, forecast
 }
 
-func (fs SqlForecastStore) GetOldestForecast(date string, Id int) data.DBForecast {
-	err := fs.SqlStore.masterX.QueryRow("")
-}
 func (fs SqlForecastStore) MarshalForecastToDB(forecast data.Forecast) (data.DBForecast, error) {
 	//why error if im not handling case where there is an error?
 	Features := forecast.Features[0]
@@ -169,6 +168,45 @@ func (fs SqlForecastStore) MarshalForecastToDB(forecast data.Forecast) (data.DBF
 	}
 
 	return forecastDB, nil
+
+}
+
+func (fs SqlForecastStore) DryestForecast() (err error, DryestCrags []data.DBForecast) {
+
+	query := `
+	select * frome forecast where TotalPrecipAmount = (SELECT MIN(TotalPrecipAmount) from forecast)
+`
+
+	var DryestForecast []data.DBForecast
+
+	rows, err := fs.SqlStore.masterX.Query(query)
+
+	if err != nil {
+		return err, nil
+	}
+
+	for rows.Next() {
+		f := data.DBForecast{}
+		err := rows.Scan(
+			&f.Time,
+			&f.ScreenTemperature,
+			&f.FeelsLikeTemp,
+			&f.WindSpeed,
+			&f.WindDirection,
+			&f.TotalPrecipAmount,
+			&f.ProbOfPrecipitation,
+			&f.Latitude,
+			&f.Longitude)
+
+		if err != nil {
+			return err, nil
+		}
+
+		DryestForecast = append(DryestForecast, f)
+
+	}
+
+	return nil, DryestForecast
 
 }
 
