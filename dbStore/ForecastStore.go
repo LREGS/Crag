@@ -104,8 +104,30 @@ func (fs SqlForecastStore) GetMultipleForecastByID(Ids []int) (map[int][]interfa
 
 }
 
-func (fs SqlForecastStore) UpdateForecast() {
-	return
+func (fs SqlForecastStore) UpdateForecast(forecast data.DBForecast) error {
+
+	query := `
+	update forecast 
+	set
+	Time = $1,
+	ScreenTemperature = $2,
+	FeelsLikeTemp = $3,
+	WindSpeed = $4,
+	WindDirection = $5,
+	totalPrecitipitation = $6,
+	ProbofPrecipitation = $7,
+	Latitude = $8,
+	Longitude = $9
+	where id = $10"
+	)
+`
+
+	_, err := fs.SqlStore.masterX.Exec(query, forecast.Time, forecast.ScreenTemperature, forecast.FeelsLikeTemp, forecast.WindSpeed, forecast.WindDirection, forecast.TotalPrecipAmount, forecast.ProbOfPrecipitation, forecast.Latitude, forecast.Longitude, forecast.Id)
+	if err != nil {
+		return err
+	}
+	//we probably want to return success or use this logger thing -  its use the error thing :)
+	return nil
 }
 
 func (fs SqlForecastStore) DeleteForecast(Id int) error {
