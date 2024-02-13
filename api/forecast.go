@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"workspaces/github.com/lregs/Crag/api"
 )
 
 func (api *API) InitForecast() {
@@ -19,6 +20,13 @@ func (api *API) InitForecast() {
 
 }
 
-func getForecasts(w http.ResponseWriter, r *http.Request) {
-	return
+// use this pattern so that we can use DI on the handler and then return a Handler func
+func GetForecast(logger *Logger) http.Handler {
+	thing := prepareThing()
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// use thing to handle request
+			logger.Info(r.Context(), "msg", "handleSomething")
+		}
+	)
 }
