@@ -1,7 +1,7 @@
 //store is initialised inside channels/app/server.go in mattermost
 //The server has values services, which a store is part of a service
 
-package dbStore
+package Store
 
 import "workspaces/github.com/lregs/Crag/data"
 

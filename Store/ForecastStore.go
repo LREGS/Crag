@@ -1,4 +1,4 @@
-package dbStore
+package Store
 
 //we want to find a way of cleaning the database every x amount of days to remove old forecasts
 
@@ -11,7 +11,7 @@ type SqlForecastStore struct {
 	*SqlStore
 }
 
-func newSqlForecastStore(sqlStore *SqlStore) ForecastStore {
+func NewSqlForecastStore(sqlStore *SqlStore) ForecastStore {
 	fs := &SqlForecastStore{
 		SqlStore: sqlStore,
 	}

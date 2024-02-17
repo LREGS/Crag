@@ -1,4 +1,4 @@
-package dbStore
+package Store
 
 import (
 	"database/sql"
@@ -21,7 +21,7 @@ type SqlStore struct {
 }
 
 type SqlStoreStores struct {
-	forecast ForecastStore
+	Forecast ForecastStore
 }
 
 func New() (*SqlStore, error) {
@@ -34,7 +34,7 @@ func New() (*SqlStore, error) {
 	}
 
 	// inits the Forecast store
-	store.stores.forecast = newSqlForecastStore(store)
+	store.stores.Forecast = NewSqlForecastStore(store)
 
 	return store, nil
 }
@@ -54,4 +54,8 @@ func (ss *SqlStore) initConnection() error {
 
 func (ss *SqlStore) GetMasterX() *sql.DB {
 	return ss.masterX
+}
+
+func (ss *SqlStore) Forecast() ForecastStore {
+	return ss.stores.Forecast
 }
