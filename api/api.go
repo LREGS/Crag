@@ -1,6 +1,10 @@
 package api
 
-import "github.com/gorilla/mux"
+import (
+	"workspaces/github.com/lregs/Crag/app"
+
+	"github.com/gorilla/mux"
+)
 
 type Routes struct {
 	Root *mux.Router
@@ -14,26 +18,38 @@ type Routes struct {
 	//Auth
 }
 
-type API struct {
-	srv        *Server
-	BaseRoutes *Routes
+type Dependecnies struct {
+	store *SqlStore
+	//auth
+	//logging
+	//config
+	//messaging/tasks
+	//external api?? - actually getting data from the met api
 }
 
-func Init(srv *Server) (*API, error) {
+type API struct {
+	BaseRoutes *Routes
+	Deps       *Dependecnies
+	Server     *app.Server
+}
+
+func Init(srv *Server, deps *Dependecnies) (*API, error) {
 	api := &API{
-		srv:        srv,
 		BaseRoutes: &Routes{},
+		Deps:       deps,
 	}
 
 	api.BaseRoutes.Root = srv.Router
 
-	api.BaseRoutes.Forecast = api.BaseRoutes.Root.PathPrefix("/forecast").SubRouter()
+	api.BaseRoutes.Forecast = api.BaseRoutes.Root.PathPrefix("/forecast").Subrouter()
 
-	api.BaseRoutes.Crag = api.BaseRoutes.Root.PathPrefix("/crag").SubRouter()
+	api.BaseRoutes.Crag = api.BaseRoutes.Root.PathPrefix("/crag").Subrouter()
 
-	api.BaseRoutes.Climbs = api.BaseRoutes.Root.PathPrefix("/climb").SubRouter()
+	api.BaseRoutes.Climbs = api.BaseRoutes.Root.PathPrefix("/climb").Subrouter()
 
 	api.InitForecast()
-	api.InitCrag()
-	api.InitClimbs()
+	// api.InitCrag()
+	// api.InitClimbs()
+
+	return api, nil
 }
