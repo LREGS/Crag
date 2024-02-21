@@ -1,4 +1,4 @@
-package forecast
+package Services
 
 import (
 	"workspaces/github.com/lregs/Crag/Store"
@@ -17,7 +17,7 @@ type ServiceConfig struct {
 	ForecastStore Store.ForecastStore
 }
 
-func New(c ServiceConfig) *ForecastService {
+func NewForecastService(c ServiceConfig) *ForecastService {
 	return &ForecastService{
 		store: c.ForecastStore,
 	}

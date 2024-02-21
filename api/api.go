@@ -1,6 +1,8 @@
 package api
 
 import (
+	"workspaces/github.com/lregs/Crag/Services"
+	"workspaces/github.com/lregs/Crag/Store"
 	"workspaces/github.com/lregs/Crag/app"
 
 	"github.com/gorilla/mux"
@@ -19,7 +21,8 @@ type Routes struct {
 }
 
 type Dependecnies struct {
-	store *SqlStore
+	Store    *Store.SqlStore
+	Services *Services.Services
 	//auth
 	//logging
 	//config
@@ -33,7 +36,7 @@ type API struct {
 	Server     *app.Server
 }
 
-func Init(srv *Server, deps *Dependecnies) (*API, error) {
+func Init(srv *app.Server, deps *Dependecnies) (*API, error) {
 	api := &API{
 		BaseRoutes: &Routes{},
 		Deps:       deps,

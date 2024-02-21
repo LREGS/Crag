@@ -12,11 +12,11 @@ type Server struct {
 	Router     *mux.Router
 	Server     *http.Server
 	// logger *log.Logger
-	store *Store.SqlStore
+	Store *Store.SqlStore
 }
 
-func (s *Server) Store() *Store.SqlStore {
-	return s.store
+func (s *Server) ReturnStore() *Store.SqlStore {
+	return s.Store
 }
 
 func NewServer() *Server {

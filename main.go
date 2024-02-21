@@ -100,6 +100,7 @@ package main
 
 import (
 	"log"
+	Services "workspaces/github.com/lregs/Crag/Services"
 	"workspaces/github.com/lregs/Crag/api"
 	"workspaces/github.com/lregs/Crag/app"
 )
@@ -107,8 +108,19 @@ import (
 func main() {
 	server := app.NewServer()
 
-	api, err := api.Init()
+	Services, err := Services.InitServices(server.Store)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var Deps api.Dependecnies
+	Deps.Services = Services
+	Deps.Store = server.Store
+
+	api, err := api.Init(server, &Deps)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	server.Router.Handle("/api", api.BaseRoutes.Root)
 }
