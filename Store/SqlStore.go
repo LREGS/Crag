@@ -22,6 +22,7 @@ type SqlStore struct {
 
 type SqlStoreStores struct {
 	Forecast ForecastStore
+	Crag     CragStore
 }
 
 func New() (*SqlStore, error) {

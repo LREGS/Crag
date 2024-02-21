@@ -113,6 +113,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	//should probably have an init function like everything else - gotta stay dry bro
 	var Deps api.Dependecnies
 	Deps.Services = Services
 	Deps.Store = server.Store

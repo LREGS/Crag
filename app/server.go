@@ -36,7 +36,7 @@ func NewServer() *Server {
 	if sErr != nil {
 		return nil
 	}
-	s.store = store
+	s.Store = store
 
 	return s
 

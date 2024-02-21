@@ -14,4 +14,11 @@ type ForecastStore interface {
 	MarshalForecastToDB(forecast data.Forecast) (data.DBForecast, error)
 }
 
+type CragStore interface {
+	StoreCrag(crag data.Crag) (err error)
+	GetCrag(id int) (crag data.Crag, err error)
+	UpdateCrag(crag data.Crag) error
+	DeleteCrag(id int) error
+}
+
 //store needs init 	store.stores.user = newSqlUserStore(store, metrics)

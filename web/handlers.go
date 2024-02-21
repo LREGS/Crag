@@ -2,16 +2,19 @@ package web
 
 import (
 	"net/http"
-	"workspaces/github.com/lregs/Crag/app"
 )
 
 type Handler struct {
-	Srv        *app.Server
-	HandleFunc func(http.ResponseWriter, *http.Request)
+	handlerFunc func(http.ResponseWriter, *http.Request)
+	//requires session - when auth is implemented
+}
+
+func APIHandler(h func(http.ResponseWriter, *http.Request)) *Handler {
+	return &Handler{
+		handlerFunc: h,
+	}
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	appInstance := app.New()
-
-	c := &Context
+	h.handlerFunc(w, r)
 }
