@@ -34,5 +34,6 @@ create table forecast(
     totalPrecipitation  double precision,
     ProbofPrecipitation int,
     Latitude            double precision,
-    Longitude           double precision
+    Longitude           double precision, 
+
 );

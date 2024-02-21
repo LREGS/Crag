@@ -12,6 +12,7 @@ type Server struct {
 	Router     *mux.Router
 	Server     *http.Server
 	// logger *log.Logger
+	//services
 	Store *Store.SqlStore
 }
 
