@@ -51,7 +51,7 @@ func Init(srv *app.Server, deps *Dependecnies) (*API, error) {
 	api.BaseRoutes.Climbs = api.BaseRoutes.Root.PathPrefix("/climb").Subrouter()
 
 	api.InitForecast()
-	api.InitCrag(api.Deps)
+	api.InitCrag()
 	// api.InitClimbs()
 
 	return api, nil

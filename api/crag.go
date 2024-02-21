@@ -10,7 +10,7 @@ import (
 )
 
 func (api *API) InitCrag() {
-	api.BaseRoutes.Crag.Handle("", web.APIHandler(getCrag)).Methods("GET") ///crags shows all crags
+	api.BaseRoutes.Crag.Handle("", web.APIHandler(getCrag(Deps.Store))).Methods("GET") ///crags shows all crags
 }
 
 func getCrag(w http.ResponseWriter, r *http.Request, store *Store.SqlStore) {

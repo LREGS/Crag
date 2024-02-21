@@ -17,7 +17,7 @@ type SqlStore struct {
 	//Context
 	//RWMutex
 
-	stores SqlStoreStores
+	Stores SqlStoreStores
 }
 
 type SqlStoreStores struct {
