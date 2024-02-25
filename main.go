@@ -9,6 +9,7 @@ import (
 
 type CragStore interface {
 	GetForecast(name string) string
+	addForecast(name string)
 }
 
 type CragServer struct {
@@ -21,10 +22,38 @@ func (i *InMemoryCragStore) GetForecast(crag string) string {
 	return "dry"
 }
 
-func (c CragServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	crag := strings.TrimPrefix(r.URL.Path, "/crags/")
-	fmt.Fprint(w, c.store.GetForecast(crag))
+func (i *InMemoryCragStore) addForecast(crag string) {
+}
 
+func (c CragServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		c.processForecast(w, r)
+	case http.MethodGet:
+		c.showForecast(w, r)
+
+	}
+
+	if r.Method == http.MethodPost {
+		w.WriteHeader(http.StatusAccepted)
+	}
+
+}
+
+func (c *CragServer) showForecast(w http.ResponseWriter, r *http.Request) {
+	crag := strings.TrimPrefix(r.URL.Path, "/crags/")
+	forecast := c.store.GetForecast(crag)
+
+	if forecast == "" {
+		w.WriteHeader(http.StatusNotFound)
+	}
+	fmt.Fprint(w, forecast)
+
+}
+
+func (c *CragServer) processForecast(w http.ResponseWriter, r *http.Request) {
+	c.store.addForecast("dry")
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func GetForecast(crag string) string {
