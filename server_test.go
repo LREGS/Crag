@@ -9,7 +9,14 @@ import (
 
 func TestGETCrags(t *testing.T) {
 
-	server := &CragServer{}
+	store := StubCragStore{
+		map[string]string{
+			"stanage":   "cold",
+			"milestone": "dry",
+		},
+	}
+
+	server := &CragServer{&store}
 
 	t.Run("returns forecast of a stange", func(t *testing.T) {
 		request := newGetForecastRequest("stanage")
@@ -43,4 +50,13 @@ func assertBodyResponse(t testing.TB, got, want string) {
 	if got != want {
 		t.Errorf("response body is wrong, got %q and wanted %q", got, want)
 	}
+}
+
+type StubCragStore struct {
+	crags map[string]string
+}
+
+func (s *StubCragStore) GetForecast(name string) string {
+	forecast := s.crags[name]
+	return forecast
 }
