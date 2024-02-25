@@ -92,7 +92,8 @@ func TestStoreForecast(t *testing.T) {
 	server := &CragServer{&store}
 
 	t.Run("return accepted on POST", func(t *testing.T) {
-		request := newPostForecast("Dry")
+		reportedForecast := "dry"
+		request := newPostForecast(reportedForecast)
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -100,6 +101,10 @@ func TestStoreForecast(t *testing.T) {
 
 		if len(store.forecasts) != 1 {
 			t.Errorf("got %d calls to forecasts want %d", len(store.forecasts), 1)
+		}
+
+		if store.forecasts[0] != reportedForecast {
+			t.Errorf("did not store correct forecast got %q want %q", store.forecasts[0], reportedForecast)
 		}
 
 	})

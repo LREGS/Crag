@@ -52,8 +52,16 @@ func (c *CragServer) showForecast(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *CragServer) processForecast(w http.ResponseWriter, r *http.Request) {
-	c.store.addForecast("dry")
+	reportedForecast := c.getForecastFromURL(r.URL.Path)
+	c.store.addForecast(reportedForecast)
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (c *CragServer) getForecastFromURL(url string) string {
+	crag := strings.TrimPrefix(url, "/crags/")
+	comps := strings.Split(crag, "/")
+	return comps[2]
+
 }
 
 func GetForecast(crag string) string {
