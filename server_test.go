@@ -115,3 +115,18 @@ func newPostForecast(forecast string) *http.Request {
 	return req
 
 }
+
+func TestPostForecastAndRetrievingThem(t *testing.T) {
+
+	store := InMemoryCragStore{}
+	server := CragServer{&store}
+	forecast := "Dry"
+	crag := "stange"
+
+	server.ServeHTTP(httptest.NewRecorder(), newPostForecast(forecast))
+
+	response := httptest.NewRecorder()
+	server.ServeHTTP(response, newGetForecastRequest(crag))
+	assertStatus(t, response.Code, http.StatusOK)
+
+}
