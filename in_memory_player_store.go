@@ -1,20 +1,17 @@
 package main
 
-func NewInMemoryCragStore() *InMemoryCragStore {
-	return &InMemoryCragStore{make(map[string][]string)}
+func NewInMemoryPlayerStore() *InMemoryPlayerStore {
+	return &InMemoryPlayerStore{map[string]int{}}
 }
 
-type InMemoryCragStore struct {
-	store map[string][]string
+type InMemoryPlayerStore struct {
+	store map[string]int
 }
 
-func (i *InMemoryCragStore) GetForecast(crag string) string {
-	if len(i.store[crag]) == 0 {
-		return ""
-	}
-	return i.store[crag][0]
+func (i *InMemoryPlayerStore) RecordWin(name string) {
+	i.store[name]++
 }
 
-func (i *InMemoryCragStore) addForecast(crag, forecast string) {
-	i.store[crag] = append(i.store[crag], forecast)
+func (i *InMemoryPlayerStore) GetPlayerScore(name string) int {
+	return i.store[name]
 }
