@@ -24,17 +24,25 @@ func NewServer(store cragStore) http.Handler {
 }
 
 func addRoutes(mux *mux.Router, store cragStore) {
-	mux.PathPrefix("/crags/{key}").HandlerFunc(handlePostCrags(store)).Methods("POST")
+	mux.PathPrefix("/crags/{key}").HandlerFunc(handlePostCrag(store)).Methods("POST")
+	mux.PathPrefix("/crags/{key}").HandlerFunc(handleGetCrag(store)).Methods("GET")
 	mux.HandleFunc("/", handleRoot()).Methods("GET")
 
 }
 
-func handlePostCrags(store cragStore) http.HandlerFunc {
+func handlePostCrag(store cragStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		crag := vars["key"]
 		store.addCrag(crag)
 		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func handleGetCrag(store cragStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "stanage")
 	}
 }
 

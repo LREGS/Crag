@@ -48,7 +48,7 @@ func newPostCragRequst(name string) *http.Request {
 
 func TestGetCrag(t *testing.T) {
 	StubStore := StubCragStore{Names: []string{"stanage"}}
-	t.Run("Records on Get", func(t *testing.T) {
+	t.Run("Returns Crag named Stanage", func(t *testing.T) {
 		crag := "stanage"
 		handler := NewServer(&StubStore)
 
@@ -58,11 +58,20 @@ func TestGetCrag(t *testing.T) {
 		handler.ServeHTTP(response, request)
 
 		assertStatus(t, response.Code, http.StatusOK)
+		assertResponseBody(t, response.Body.String(), "stanage")
 	})
 }
 func newGetCragRequest(name string) *http.Request {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/crags/%s", name), nil)
 	return req
+}
+
+func assertResponseBody(t testing.TB, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("response body incorrect. Got %s, wanted %s", got, want)
+	}
+
 }
 
 func assertStatus(t testing.TB, got, want int) {
