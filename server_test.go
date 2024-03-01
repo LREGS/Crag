@@ -41,9 +41,27 @@ func TestStoreCrag(t *testing.T) {
 	})
 
 }
-
 func newPostCragRequst(name string) *http.Request {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("/crags/%s", name), nil)
+	return req
+}
+
+func TestGetCrag(t *testing.T) {
+	StubStore := StubCragStore{Names: []string{"stanage"}}
+	t.Run("Records on Get", func(t *testing.T) {
+		crag := "stanage"
+		handler := NewServer(&StubStore)
+
+		request := newGetCragRequest(crag)
+		response := httptest.NewRecorder()
+
+		handler.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+	})
+}
+func newGetCragRequest(name string) *http.Request {
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/crags/%s", name), nil)
 	return req
 }
 
