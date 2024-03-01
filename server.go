@@ -7,13 +7,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type cragStore interface {
+	addCrag(crag string)
+}
+
 type Server struct {
 	Store *InMemoryCragStore
 }
 
-func NewServer(cragStore *InMemoryCragStore) http.Handler {
+func NewServer(store cragStore) http.Handler {
 	mux := mux.NewRouter()
-	addRoutes(mux, cragStore)
+	addRoutes(mux, store)
 
 	var handler http.Handler = mux
 
@@ -23,16 +27,16 @@ func NewServer(cragStore *InMemoryCragStore) http.Handler {
 
 }
 
-func addRoutes(mux *mux.Router, cragStore *InMemoryCragStore) {
-	mux.Handle("/crags", http.HandlerFunc(handlePostCrags(cragStore)))
+func addRoutes(mux *mux.Router, store cragStore) {
+	mux.Handle("https://localhost:6969/crags/", http.HandlerFunc(handlePostCrags(store)))
 
 }
 
-func handlePostCrags(s *InMemoryCragStore) http.HandlerFunc {
+func handlePostCrags(store cragStore) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		crag := strings.TrimPrefix(r.URL.Path, "/crags/")
-		s.addCrag(crag)
+		store.addCrag(crag)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }

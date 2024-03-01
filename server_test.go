@@ -1,12 +1,10 @@
-package main_test
+package main
 
 import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	Crag "github.com/lregs/Crag"
 )
 
 var url = "http://localhost:8080/crags"
@@ -15,15 +13,15 @@ type StubCragStore struct {
 	Names []string
 }
 
-func (s *StubCragStore) addCrag(crag string) {
-	s.Names = append(s.Names, crag)
+func (s *StubCragStore) addCrag(name string) {
+	s.Names = append(s.Names, name)
 }
 
 func TestStoreCrag(t *testing.T) {
 	StubStore := &StubCragStore{Names: []string{}}
 	t.Run("Records on Post", func(t *testing.T) {
 		crag := "stanage"
-		handler := Crag.NewServer(StubStore)
+		handler := NewServer(StubStore)
 
 		request := newPostCragRequst(crag)
 		response := httptest.NewRecorder()
@@ -37,7 +35,7 @@ func TestStoreCrag(t *testing.T) {
 		}
 
 		if StubStore.Names[len(StubStore.Names)-1] != crag {
-			t.Fatalf("the last entry into names was %s but was meant to be %s", StubStore.Names[len(StubStore.names)-1], crag)
+			t.Fatalf("the last entry into names was %s but was meant to be %s", StubStore.Names[len(StubStore.Names)-1], crag)
 		}
 
 	})
@@ -50,5 +48,8 @@ func newPostCragRequst(name string) *http.Request {
 }
 
 func assertStatus(t testing.TB, got, want int) {
+	if got != http.StatusAccepted {
+		t.Fatalf("expected %d but got %d", want, got)
+	}
 
 }

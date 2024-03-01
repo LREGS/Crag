@@ -1,9 +1,5 @@
 package main
 
-type cragStore interface {
-	addCrag(crag string)
-}
-
 func NewInMemoryCragStore() *InMemoryCragStore {
 	return &InMemoryCragStore{[]string{}}
 }
