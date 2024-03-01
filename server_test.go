@@ -17,6 +17,10 @@ func (s *StubCragStore) addCrag(name string) {
 	s.Names = append(s.Names, name)
 }
 
+func (s *StubCragStore) getNames() []string {
+	return s.Names
+}
+
 func TestStoreCrag(t *testing.T) {
 	StubStore := StubCragStore{Names: []string{}}
 	t.Run("Records on Post", func(t *testing.T) {

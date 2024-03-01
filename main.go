@@ -41,8 +41,17 @@ func handlePostCrag(store cragStore) http.HandlerFunc {
 
 func handleGetCrag(store cragStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "stanage")
+
+		vars := mux.Vars(r)
+		cragNames := store.getNames()
+		for _, name := range cragNames {
+			if name == vars["key"] {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprint(w, name)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}
 	}
 }
 
@@ -65,6 +74,10 @@ func (i *InMemoryCragStore) addCrag(name string) {
 	i.Names = append(i.Names, name)
 }
 
+func (i *InMemoryCragStore) getNames() []string {
+	return i.Names
+}
+
 func main() {
 	store := NewInMemoryCragStore()
 	server := NewServer(store)
@@ -77,4 +90,5 @@ func main() {
 
 type cragStore interface {
 	addCrag(crag string)
+	getNames() []string
 }
