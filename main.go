@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -25,15 +24,16 @@ func NewServer(store cragStore) http.Handler {
 }
 
 func addRoutes(mux *mux.Router, store cragStore) {
-	mux.PathPrefix("/crags/").HandlerFunc(handlePostCrags(store)).Methods("POST")
+	mux.PathPrefix("/crags/{key}").HandlerFunc(handlePostCrags(store)).Methods("POST")
 	mux.HandleFunc("/", handleRoot()).Methods("GET")
 
 }
 
 func handlePostCrags(store cragStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		crag := strings.Split(strings.TrimSuffix(r.URL.Path, "/crags/"), "/")
-		store.addCrag(crag[2])
+		vars := mux.Vars(r)
+		crag := vars["key"]
+		store.addCrag(crag)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
