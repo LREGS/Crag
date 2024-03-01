@@ -30,13 +30,13 @@ func TestStoreCrag(t *testing.T) {
 
 		assertStatus(t, response.Code, http.StatusAccepted)
 
-		// if len(StubStore.Names) == 0 {
-		// 	t.Fatalf("there has been no successful entries into the store")
-		// }
+		if len(StubStore.Names) == 0 {
+			t.Fatalf("there has been no successful entries into the store")
+		}
 
-		// if StubStore.Names[len(StubStore.Names)-1] != crag {
-		// 	t.Fatalf("the last entry into names was %s but was meant to be %s", StubStore.Names[len(StubStore.Names)-1], crag)
-		// }
+		if StubStore.Names[len(StubStore.Names)-1] != crag {
+			t.Fatalf("the last entry into names was %s but was meant to be %s", StubStore.Names[len(StubStore.Names)-1], crag)
+		}
 
 	})
 
