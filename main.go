@@ -25,8 +25,8 @@ func NewServer(store cragStore) http.Handler {
 }
 
 func addRoutes(mux *mux.Router, store cragStore) {
-	mux.PathPrefix("/crags/").Handler(http.HandlerFunc(handlePostCrags(store))).Methods("POST")
-	mux.HandleFunc("/", handleRoot())
+	mux.PathPrefix("/crags/").HandlerFunc(handlePostCrags(store)).Methods("POST")
+	mux.HandleFunc("/", handleRoot()).Methods("GET")
 
 }
 
