@@ -16,7 +16,7 @@ import (
 var db *sql.DB
 
 func TestMain(m *testing.M) {
-	pool, err := dockertest.NewPool("socket")
+	pool, err := dockertest.NewPool("")
 	if err != nil {
 		log.Fatalf("Could not construct pool: %s", err)
 	}
