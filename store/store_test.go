@@ -73,3 +73,16 @@ func TestMain(m *testing.M) {
 
 	os.Exit(code)
 }
+
+func TestCreateCragTable(t *testing.T){
+	query := "CREATE TABLE crag (
+		Id SERIAL PRIMARY KEY, 
+		Name TEXT, 
+		Latitude DOUBLE PRECISION,
+		Longitude DOUBLE PRECISION
+	);"
+
+	db.Exec(query)
+
+
+}
