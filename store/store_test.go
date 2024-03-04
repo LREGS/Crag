@@ -119,7 +119,6 @@ func TestDBCreation(t *testing.T) {
 	db.Exec(query)
 
 	assertTables(t)
-
 }
 
 func assertTables(t *testing.T) {
@@ -155,5 +154,19 @@ func assertTables(t *testing.T) {
 				log.Fatalf("%s has been incorrectly added to the db, or doesnt exist in the test set", currentTable)
 			}
 		}
+
 	})
+	defer func() {
+		for table := range tables {
+			dropTable(table, t)
+		}
+	}()
+}
+
+func dropTable(tableName string, t *testing.T) {
+	query := fmt.Sprintf("Drop table if exists %s cascade", tableName)
+	_, err := db.Query(query)
+	if err != nil {
+		log.Fatalf("Error dropping table %s because of %s", tableName, err)
+	}
 }
