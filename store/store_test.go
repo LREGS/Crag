@@ -74,15 +74,86 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestCreateCragTable(t *testing.T){
-	query := "CREATE TABLE crag (
+func TestDBCreation(t *testing.T) {
+	query := `-- Drop tables if they exist
+	DROP TABLE IF EXISTS forecast;
+	DROP TABLE IF EXISTS report;
+	DROP TABLE IF EXISTS climb;
+	DROP TABLE IF EXISTS crag;
+	
+	-- Create tables
+	CREATE TABLE crag (
 		Id SERIAL PRIMARY KEY, 
 		Name TEXT, 
 		Latitude DOUBLE PRECISION,
 		Longitude DOUBLE PRECISION
-	);"
+	);
+	
+	CREATE TABLE climb (
+		Id SERIAL PRIMARY KEY,
+		Name VARCHAR(255),
+		Grade VARCHAR(255),
+		CragID INTEGER REFERENCES crag(Id)
+	);
+	
+	CREATE TABLE report (
+		Id SERIAL PRIMARY KEY, 
+		Content VARCHAR(255),
+		Author VARCHAR(255),
+		CragID INTEGER REFERENCES crag(Id)
+	);
+	
+	CREATE TABLE forecast (
+		Id SERIAL PRIMARY KEY, 
+		Time VARCHAR(255),
+		ScreenTemperature DOUBLE PRECISION,
+		FeelsLikeTemp DOUBLE PRECISION, 
+		WindSpeed DOUBLE PRECISION,
+		WindDirection DOUBLE PRECISION,
+		totalPrecipitation DOUBLE PRECISION,
+		ProbofPrecipitation INT,
+		Latitude DOUBLE PRECISION,
+		Longitude DOUBLE PRECISION
+	);`
 
 	db.Exec(query)
 
+	assertTables(t)
 
+}
+
+func assertTables(t *testing.T) {
+	tables := map[string]bool{
+		"crag":     true,
+		"climb":    true,
+		"report":   true,
+		"forecast": true,
+	}
+
+	t.Run("Testing if tables correctly added", func(t *testing.T) {
+
+		Query := `
+		SELECT table_name
+		FROM information_schema.tables
+		WHERE table_schema = 'public' AND table_type = 'BASE TABLE' `
+
+		rows, err := db.Query(Query)
+		if err != nil {
+			log.Fatalf("wasnt able to make queary because of %s:", err)
+		}
+
+		for rows.Next() {
+			var currentTable string
+			if err := rows.Scan(&currentTable); err != nil {
+				log.Fatal(err)
+			}
+			_, ok := tables[currentTable]
+
+			if ok {
+				continue
+			} else {
+				log.Fatalf("%s has been incorrectly added to the db, or doesnt exist in the test set", currentTable)
+			}
+		}
+	})
 }
