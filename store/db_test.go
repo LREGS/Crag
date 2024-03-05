@@ -75,49 +75,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestDBCreation(t *testing.T) {
-	query := `-- Drop tables if they exist
-	DROP TABLE IF EXISTS forecast;
-	DROP TABLE IF EXISTS report;
-	DROP TABLE IF EXISTS climb;
-	DROP TABLE IF EXISTS crag;
-	
-	-- Create tables
-	CREATE TABLE crag (
-		Id SERIAL PRIMARY KEY, 
-		Name TEXT, 
-		Latitude DOUBLE PRECISION,
-		Longitude DOUBLE PRECISION
-	);
-	
-	CREATE TABLE climb (
-		Id SERIAL PRIMARY KEY,
-		Name VARCHAR(255),
-		Grade VARCHAR(255),
-		CragID INTEGER REFERENCES crag(Id)
-	);
-	
-	CREATE TABLE report (
-		Id SERIAL PRIMARY KEY, 
-		Content VARCHAR(255),
-		Author VARCHAR(255),
-		CragID INTEGER REFERENCES crag(Id)
-	);
-	
-	CREATE TABLE forecast (
-		Id SERIAL PRIMARY KEY, 
-		Time VARCHAR(255),
-		ScreenTemperature DOUBLE PRECISION,
-		FeelsLikeTemp DOUBLE PRECISION, 
-		WindSpeed DOUBLE PRECISION,
-		WindDirection DOUBLE PRECISION,
-		totalPrecipitation DOUBLE PRECISION,
-		ProbofPrecipitation INT,
-		Latitude DOUBLE PRECISION,
-		Longitude DOUBLE PRECISION
-	);`
-
-	db.Exec(query)
-
+	CreateTables(t)
 	assertTables(t)
 }
 
@@ -169,4 +127,49 @@ func dropTable(tableName string, t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error dropping table %s because of %s", tableName, err)
 	}
+}
+
+func CreateTables(t *testing.T) {
+	query := `-- Drop tables if they exist
+	DROP TABLE IF EXISTS forecast;
+	DROP TABLE IF EXISTS report;
+	DROP TABLE IF EXISTS climb;
+	DROP TABLE IF EXISTS crag;
+	
+	-- Create tables
+	CREATE TABLE crag (
+		Id SERIAL PRIMARY KEY, 
+		Name TEXT, 
+		Latitude DOUBLE PRECISION,
+		Longitude DOUBLE PRECISION
+	);
+	
+	CREATE TABLE climb (
+		Id SERIAL PRIMARY KEY,
+		Name VARCHAR(255),
+		Grade VARCHAR(255),
+		CragID INTEGER REFERENCES crag(Id)
+	);
+	
+	CREATE TABLE report (
+		Id SERIAL PRIMARY KEY, 
+		Content VARCHAR(255),
+		Author VARCHAR(255),
+		CragID INTEGER REFERENCES crag(Id)
+	);
+	
+	CREATE TABLE forecast (
+		Id SERIAL PRIMARY KEY, 
+		Time VARCHAR(255),
+		ScreenTemperature DOUBLE PRECISION,
+		FeelsLikeTemp DOUBLE PRECISION, 
+		WindSpeed DOUBLE PRECISION,
+		WindDirection DOUBLE PRECISION,
+		totalPrecipitation DOUBLE PRECISION,
+		ProbofPrecipitation INT,
+		Latitude DOUBLE PRECISION,
+		Longitude DOUBLE PRECISION
+	);`
+
+	db.Exec(query)
 }
