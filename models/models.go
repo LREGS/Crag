@@ -1,13 +1,13 @@
-package main
+package models
 
 type Crag struct {
 	Id        int
 	Name      string
 	Latitude  float64
 	Longitude float64
-	Climbs    []Climb      //many to one relationship not db field
-	Reports   []Report     //many to one relationship not db field
-	Forecast  []DBForecast //I dont think I have an int key in my forecast pointing to crag and this needs fixingf
+	// Climbs    []Climb      //many to one relationship not db field
+	// Reports   []Report     //many to one relationship not db field
+	// Forecast  []DBForecast //I dont think I have an int key in my forecast pointing to crag and this needs fixingf
 }
 
 type Climb struct {
