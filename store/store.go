@@ -27,17 +27,18 @@ func NewSqlStore() (*SqlStore, error) {
 	return store, nil
 }
 
-func (ss SqlStore) initConnection() error {
+func (ss *SqlStore) initConnection() error {
 	DBURL, err := env.DBString()
 	if err != nil {
 		fmt.Printf("error establishing db connection %s", err)
+		return err
 	}
 
 	ss.masterX, err = sql.Open("postgres", DBURL)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func (ss *SqlStore) GetMasterX() *sql.DB {
