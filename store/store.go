@@ -14,7 +14,7 @@ type SqlStore struct {
 }
 
 type SqlStoreStores struct {
-	Crag CragStore
+	CragStore CragStore
 }
 
 func NewSqlStore() (*SqlStore, error) {
