@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func CreateStore(t *testing.T) CragStore {
+func CreateCragStore(t *testing.T) CragStore {
 	store, err := NewSqlStore()
 	if err != nil {
 		log.Fatalf("error creating store: %s", err)
@@ -17,7 +17,7 @@ func CreateStore(t *testing.T) CragStore {
 
 func TestAddCrag(t *testing.T) {
 
-	store := CreateStore
+	store := CreateCragStore(t)
 
 	t.Run("Testing add crag", func(t *testing.T) {
 		//I dont have a type for climbs, forecast, or reports yet and we need to make
