@@ -1,6 +1,7 @@
 package store
 
 import (
+	"reflect"
 	"testing"
 
 	models "github.com/lregs/Crag/models"
@@ -8,8 +9,7 @@ import (
 )
 
 func CreateCragStore(t *testing.T) *SqlStore {
-	config := &StoreConfig{dbConnection: db}
-	store, err := NewSqlStore(config)
+	store, err := NewSqlStore(&StoreConfig{dbConnection: db})
 	if err != nil {
 		t.Fatalf("error creating store: %s", err)
 	}
@@ -19,7 +19,7 @@ func CreateCragStore(t *testing.T) *SqlStore {
 func TestAddCrag(t *testing.T) {
 
 	store := CreateCragStore(t)
-	CragStore := store.Stores.CragStore
+	// CragStore := store.Stores.CragStore
 
 	t.Run("Testing add crag", func(t *testing.T) {
 		//I dont have a type for climbs, forecast, or reports yet and we need to make
@@ -31,13 +31,15 @@ func TestAddCrag(t *testing.T) {
 			Longitude: -74.0060,
 		}
 
-		err := CragStore.StoreCrag(crag)
+		log.Infof("store: %+v", store)
+		log.Infof("Cragstore = %+v", store.Stores.CragStore)
+
+		err := store.Stores.CragStore.StoreCrag(crag)
 		if err != nil {
 			log.Fatalf("was not about to store Crag because of err: %s", err)
 		}
 
-		var testData models.Crag
-		testData.Id = 1
+		testData := &models.Crag{Id: 1}
 
 		query := "select name, latitude, longtitude from crag where id = $1"
 		err = db.QueryRow(query, crag.Id).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
@@ -45,7 +47,7 @@ func TestAddCrag(t *testing.T) {
 			log.Fatalf("wasn't able to retrieve data from db: %s", err)
 		}
 
-		if testData != *crag {
+		if !reflect.DeepEqual(testData, crag) {
 			log.Fatalf("the returned data from the db does not match that of the inputted data")
 		}
 

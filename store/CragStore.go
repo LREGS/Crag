@@ -3,13 +3,18 @@ package store
 import "github.com/lregs/Crag/models"
 
 type SqlCragStore struct {
-	*SqlStore
+	Store *SqlStore
+}
+
+func NewCragStore(sqlStore *SqlStore) *SqlCragStore {
+	CS := &SqlCragStore{Store: sqlStore}
+	return CS
 }
 
 func (cs *SqlCragStore) StoreCrag(crag *models.Crag) error {
 	query := `insert into crag(Name, Latitude, Longitude) values($1,$2,$3)`
 
-	_, err := cs.SqlStore.masterX.Exec(query, crag.Name, crag.Latitude, crag.Longitude)
+	_, err := cs.Store.masterX.Exec(query, crag.Name, crag.Latitude, crag.Longitude)
 	if err != nil {
 		return err
 	}

@@ -25,6 +25,8 @@ func NewSqlStore(c *StoreConfig) (*SqlStore, error) {
 	// 	return nil, errors.New("error getting connection")
 	// }
 
+	store.Stores.CragStore = NewCragStore(store)
+
 	return store, nil
 }
 
