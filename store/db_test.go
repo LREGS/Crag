@@ -117,18 +117,25 @@ func assertTables(t *testing.T) {
 
 	})
 	defer func() {
-		for table := range tables {
-			dropTable(table, t)
-		}
+		dropTables(t)
 	}()
 }
 
-func dropTable(tableName string, t *testing.T) {
-	query := fmt.Sprintf("Drop table if exists %s cascade", tableName)
-	_, err := db.Query(query)
-	if err != nil {
-		log.Fatalf("Error dropping table %s because of %s", tableName, err)
+func dropTables(t *testing.T) {
+	tables := map[string]bool{
+		"crag":     true,
+		"climb":    true,
+		"report":   true,
+		"forecast": true,
 	}
+	for table := range tables {
+		query := fmt.Sprintf("Drop table if exists %s cascade", table)
+		_, err := db.Query(query)
+		if err != nil {
+			log.Fatalf("Error dropping table %s because of %s", sql.LevelRepeatableRead, err)
+		}
+	}
+
 }
 
 func CreateTables(t *testing.T) error {

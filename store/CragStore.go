@@ -21,3 +21,7 @@ func (cs *SqlCragStore) StoreCrag(crag *models.Crag) error {
 	return nil
 
 }
+
+func (cs *SqlCragStore) GetCrag(Id int) error {
+	return nil
+}
