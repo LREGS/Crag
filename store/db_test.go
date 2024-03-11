@@ -74,7 +74,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestDBCreation(t *testing.T) {
+func TestTableCreation(t *testing.T) {
+	//I guess this is just testing whether each table exists
+	//We should flesh this out with more function that will test the rows in each table
 	CreateTables(t)
 	assertTables(t)
 }
@@ -129,7 +131,7 @@ func dropTable(tableName string, t *testing.T) {
 	}
 }
 
-func CreateTables(t *testing.T) {
+func CreateTables(t *testing.T) error {
 	query := `-- Drop tables if they exist
 	DROP TABLE IF EXISTS forecast;
 	DROP TABLE IF EXISTS report;
@@ -171,5 +173,13 @@ func CreateTables(t *testing.T) {
 		Longitude DOUBLE PRECISION
 	);`
 
-	db.Exec(query)
+	_, err := db.Exec(query)
+	if err != nil {
+		return err
+	}
+	return nil
 }
+
+// func assertCragTable(t *testing.T)     {}
+// func assertReportTable(t *testing.T)   {}
+// func assertForecastTable(t *testing.T) {}

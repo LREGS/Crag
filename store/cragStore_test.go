@@ -13,6 +13,12 @@ func CreateCragStore(t *testing.T) *SqlStore {
 	if err != nil {
 		t.Fatalf("error creating store: %s", err)
 	}
+	log.Info("Creating tables")
+	err = CreateTables(t)
+	if err != nil {
+		t.Fatalf("could not create tables because of %s", err)
+	}
+	log.Infof("Tables created")
 	return store
 }
 
@@ -36,12 +42,12 @@ func TestAddCrag(t *testing.T) {
 
 		err := store.Stores.CragStore.StoreCrag(crag)
 		if err != nil {
-			log.Fatalf("was not about to store Crag because of err: %s", err)
+			log.Fatalf("was not able to store Crag because of err: %s", err)
 		}
 
 		testData := &models.Crag{Id: 1}
 
-		query := "select name, latitude, longtitude from crag where id = $1"
+		query := "select name, latitude, longitude from crag where id = $1"
 		err = db.QueryRow(query, crag.Id).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
 		if err != nil {
 			log.Fatalf("wasn't able to retrieve data from db: %s", err)
