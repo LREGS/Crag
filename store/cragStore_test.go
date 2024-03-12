@@ -75,7 +75,7 @@ func TestGetCrag(t *testing.T) {
 		log.Infof("Creating Test Mock %+v", TestMock)
 		Id := 1
 
-		err := store.Stores.CragStore.GetCrag(Id)
+		_, err := store.Stores.CragStore.GetCrag(Id)
 		if err != nil {
 			t.Fatalf("could not store crag because of err: %s", err)
 		}
