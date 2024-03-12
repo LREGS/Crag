@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func CreateCragStore(t *testing.T) *SqlStore {
+func CreateSqlStore(t *testing.T) *SqlStore {
 	store, err := NewSqlStore(&StoreConfig{dbConnection: db})
 	if err != nil {
 		t.Fatalf("error creating store: %s", err)
@@ -24,7 +24,7 @@ func CreateCragStore(t *testing.T) *SqlStore {
 
 func TestAddCrag(t *testing.T) {
 
-	store := CreateCragStore(t)
+	store := CreateSqlStore(t)
 	// CragStore := store.Stores.CragStore
 
 	t.Run("Testing add crag", func(t *testing.T) {
@@ -61,21 +61,14 @@ func TestAddCrag(t *testing.T) {
 }
 
 func TestGetCrag(t *testing.T) {
-	store := CreateCragStore(t)
-	log.Infof("CreatedStore %+v", store)
-	MockCrag := returnCrag()
-	log.Infof("Created MockCrag %+v", MockCrag)
-	err := store.Stores.CragStore.StoreCrag(MockCrag)
-	if err != nil {
-		t.Fatalf("Couldn't store crag because of this error: %s", err)
-	}
+	MockStore := returnPrePopulatedMockStore(t)
 
 	t.Run("Testing Get Crag", func(t *testing.T) {
 		TestMock := &models.Crag{Id: 1}
 		log.Infof("Creating Test Mock %+v", TestMock)
 		Id := 1
 
-		_, err := store.Stores.CragStore.GetCrag(Id)
+		_, err := MockStore.Stores.CragStore.GetCrag(Id)
 		if err != nil {
 			t.Fatalf("could not store crag because of err: %s", err)
 		}
@@ -91,6 +84,20 @@ func returnCrag() *models.Crag {
 		Longitude: -74.0060,
 	}
 	return crag
+}
+
+func returnPrePopulatedMockStore(t *testing.T) *SqlStore {
+	store := CreateSqlStore(t)
+	log.Infof("CreatedStore %+v", store)
+	MockCrag := returnCrag()
+	log.Infof("Created MockCrag %+v", MockCrag)
+	err := store.Stores.CragStore.StoreCrag(MockCrag)
+	if err != nil {
+		t.Fatalf("Couldn't store crag because of this error: %s", err)
+	}
+
+	return store
+
 }
 
 // query := "select name, latitude, longitude from crag where id = $1"
