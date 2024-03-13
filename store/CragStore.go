@@ -35,10 +35,17 @@ func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
 	return c, err
 }
 
-func (cs *SqlCragStore) UpdateCragValue(crag models.Crag) error {
-	//takes a crag with the updates and strips the values that need updating
-	query := "update crag set Name = $1 where Id = 1"
-	_, err := cs.Store.masterX.Exec(query, "Milestone")
+func (cs *SqlCragStore) UpdateCragValue(name string, crag models.Crag) error {
+	//I'd think there has to be a way to make a query builder so I can be selective about which
+	//field I want to update without having a set method for each field.
+	//maybe do this in the future
+	query := `
+	update crag set 
+	Name = $1, 
+	Latitude = $2,
+	Longitude = $3 
+	where Name = $4`
+	_, err := cs.Store.masterX.Exec(query, crag.Name, crag.Latitude, crag.Longitude, name)
 	if err != nil {
 		return err
 	}

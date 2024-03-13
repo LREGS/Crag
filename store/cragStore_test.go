@@ -86,8 +86,9 @@ func TestUpdateCrag(t *testing.T) {
 
 		crag := returnCrag()
 		crag.Name = "Milestone"
+		log.Infof("Crag name changed to %s", crag.Name)
 
-		err := MockStore.Stores.CragStore.UpdateCragValue(*crag)
+		err := MockStore.Stores.CragStore.UpdateCragValue("Stanage", *crag)
 		if err != nil {
 			t.Fatalf("Update failed because of error: %s", err)
 		}
