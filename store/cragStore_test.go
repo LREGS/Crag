@@ -107,6 +107,24 @@ func TestUpdateCrag(t *testing.T) {
 	})
 }
 
+func TestDeleteCrag(t *testing.T) {
+	MockStore := returnPrePopulatedMockStore(t)
+
+	t.Run("Testing Delete Crag", func(t *testing.T) {
+		id := 1
+
+		err := MockStore.Stores.CragStore.DeleteCragByID(id)
+		if err != nil {
+			t.Fatalf("error deleting crag %s: ", err)
+		}
+
+		_, err = MockStore.Stores.CragStore.GetCrag(1)
+		if err == nil {
+			t.Fatalf("Crag still exists")
+		}
+	})
+}
+
 func returnCrag() *models.Crag {
 	crag := &models.Crag{
 		Id:        1,

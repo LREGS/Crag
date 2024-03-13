@@ -51,3 +51,12 @@ func (cs *SqlCragStore) UpdateCragValue(name string, crag models.Crag) error {
 	}
 	return nil
 }
+
+func (cs *SqlCragStore) DeleteCragByID(Id int) error {
+	query := `delete from crag where id = $1`
+	_, err := cs.Store.masterX.Exec(query, Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
