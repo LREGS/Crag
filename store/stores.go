@@ -9,3 +9,12 @@ type CragStore interface {
 	UpdateCragValue(name string, crag models.Crag) error
 	DeleteCragByID(Id int) error
 }
+
+type ClimbStore interface {
+	StoreClimb(climb *models.Climb) (err error)
+	GetClimbsByCrag(CragId int) ([]*models.Climb, error)
+	GetAllClimbs() []*models.Climb
+	GetClimbById(Id int) (*models.Climb, error)
+	UpdateClimb(climb *models.Climb) (*models.Climb, error)
+	DeleteClimb(Id int) error
+}

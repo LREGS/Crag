@@ -10,7 +10,8 @@ type SqlStore struct {
 }
 
 type SqlStoreStores struct {
-	CragStore CragStore
+	CragStore  CragStore
+	ClimbStore *SqlClimbStore
 }
 
 type StoreConfig struct {
@@ -26,6 +27,7 @@ func NewSqlStore(c *StoreConfig) (*SqlStore, error) {
 	// }
 
 	store.Stores.CragStore = NewCragStore(store)
+	store.Stores.ClimbStore = NewClimbStore(store)
 
 	return store, nil
 }

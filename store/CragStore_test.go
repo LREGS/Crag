@@ -8,8 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type updatedName string
-
 func CreateSqlStore(t *testing.T) *SqlStore {
 	store, err := NewSqlStore(&StoreConfig{dbConnection: db})
 	if err != nil {
@@ -63,7 +61,7 @@ func TestAddCrag(t *testing.T) {
 }
 
 func TestGetCrag(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t)
+	MockStore := returnPrePopulatedMockStore(t, false)
 
 	t.Run("Testing Get Crag", func(t *testing.T) {
 		TestMock := &models.Crag{Id: 1}
@@ -80,7 +78,7 @@ func TestGetCrag(t *testing.T) {
 
 func TestUpdateCrag(t *testing.T) {
 	t.Logf("Creating pre populated Mock Store")
-	MockStore := returnPrePopulatedMockStore(t)
+	MockStore := returnPrePopulatedMockStore(t, false)
 
 	t.Run("Testing Update Crag", func(t *testing.T) {
 
@@ -106,9 +104,8 @@ func TestUpdateCrag(t *testing.T) {
 
 	})
 }
-
 func TestDeleteCrag(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t)
+	MockStore := returnPrePopulatedMockStore(t, false)
 
 	t.Run("Testing Delete Crag", func(t *testing.T) {
 		id := 1
@@ -135,7 +132,7 @@ func returnCrag() *models.Crag {
 	return crag
 }
 
-func returnPrePopulatedMockStore(t *testing.T) *SqlStore {
+func returnPrePopulatedMockStore(t *testing.T, climb bool) *SqlStore {
 	store := CreateSqlStore(t)
 	log.Infof("CreatedStore %+v", store)
 	MockCrag := returnCrag()
@@ -143,6 +140,14 @@ func returnPrePopulatedMockStore(t *testing.T) *SqlStore {
 	err := store.Stores.CragStore.StoreCrag(MockCrag)
 	if err != nil {
 		t.Fatalf("Couldn't store crag because of this error: %s", err)
+	}
+
+	if climb != false {
+		MockClimb := returnClimb()
+		err = store.Stores.ClimbStore.StoreClimb(MockClimb)
+		if err != nil {
+			t.Fatalf("could not store climb because of this error: %s", err)
+		}
 	}
 
 	return store
