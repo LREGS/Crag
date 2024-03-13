@@ -8,6 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type updatedName string
+
 func CreateSqlStore(t *testing.T) *SqlStore {
 	store, err := NewSqlStore(&StoreConfig{dbConnection: db})
 	if err != nil {
@@ -74,6 +76,34 @@ func TestGetCrag(t *testing.T) {
 		}
 	})
 
+}
+
+func TestUpdateCrag(t *testing.T) {
+	t.Logf("Creating pre populated Mock Store")
+	MockStore := returnPrePopulatedMockStore(t)
+
+	t.Run("Testing Update Crag", func(t *testing.T) {
+
+		crag := returnCrag()
+		crag.Name = "Milestone"
+
+		err := MockStore.Stores.CragStore.UpdateCragValue(*crag)
+		if err != nil {
+			t.Fatalf("Update failed because of error: %s", err)
+		}
+
+		log.Infof("getting crag to verify update")
+		currentCrag, err := MockStore.Stores.CragStore.GetCrag(1)
+		if err != nil {
+			t.Fatalf("Failed to get crag because of err: %s", err)
+		}
+
+		log.Infof("Crag name now %s, wanted: %s", currentCrag.Name, crag.Name)
+		if currentCrag.Name != "Milestone" {
+			t.Fatalf("The update name %s does not match %s", currentCrag.Name, crag.Name)
+		}
+
+	})
 }
 
 func returnCrag() *models.Crag {

@@ -1,6 +1,8 @@
 package store
 
-import "github.com/lregs/Crag/models"
+import (
+	"github.com/lregs/Crag/models"
+)
 
 type SqlCragStore struct {
 	Store *SqlStore
@@ -31,4 +33,14 @@ func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
 		&c.Id, &c.Name, &c.Latitude, &c.Longitude)
 
 	return c, err
+}
+
+func (cs *SqlCragStore) UpdateCragValue(crag models.Crag) error {
+	//takes a crag with the updates and strips the values that need updating
+	query := "update crag set Name = $1 where Id = 1"
+	_, err := cs.Store.masterX.Exec(query, "Milestone")
+	if err != nil {
+		return err
+	}
+	return nil
 }
