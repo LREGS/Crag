@@ -9,7 +9,7 @@ import (
 
 func TestAddClimb(t *testing.T) {
 
-	MockStore := returnPrePopulatedMockStore(t, false)
+	MockStore := returnPrePopulatedMockStore(t, false, false)
 
 	t.Run("Testing Add Climb", func(t *testing.T) {
 		climb := returnClimb()
@@ -22,7 +22,7 @@ func TestAddClimb(t *testing.T) {
 }
 
 func TestGetClimbsByCrag(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, true)
+	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing Get Climb", func(t *testing.T) {
 		CragId := 1
@@ -39,7 +39,7 @@ func TestGetClimbsByCrag(t *testing.T) {
 }
 
 func TestGetAllClimbs(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, true)
+	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing GetAllClimbs", func(t *testing.T) {
 		climbs, err := MockStore.Stores.ClimbStore.GetAllClimbs()
@@ -53,7 +53,7 @@ func TestGetAllClimbs(t *testing.T) {
 }
 
 func TestGetClimbById(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, true)
+	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing GetClimbByID", func(t *testing.T) {
 
@@ -72,7 +72,7 @@ func TestGetClimbById(t *testing.T) {
 }
 
 func TestUpdateClimb(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, true)
+	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing Update Climb", func(t *testing.T) {
 		MockClimb := returnClimb()
@@ -97,7 +97,7 @@ func TestUpdateClimb(t *testing.T) {
 }
 
 func TestDeleteClimb(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, true)
+	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing Delete Climb", func(t *testing.T) {
 		climb := returnClimb()

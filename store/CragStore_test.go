@@ -61,7 +61,7 @@ func TestAddCrag(t *testing.T) {
 }
 
 func TestGetCrag(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, false)
+	MockStore := returnPrePopulatedMockStore(t, false, false)
 
 	t.Run("Testing Get Crag", func(t *testing.T) {
 		TestMock := &models.Crag{Id: 1}
@@ -78,7 +78,7 @@ func TestGetCrag(t *testing.T) {
 
 func TestUpdateCrag(t *testing.T) {
 	t.Logf("Creating pre populated Mock Store")
-	MockStore := returnPrePopulatedMockStore(t, false)
+	MockStore := returnPrePopulatedMockStore(t, false, false)
 
 	t.Run("Testing Update Crag", func(t *testing.T) {
 
@@ -105,7 +105,7 @@ func TestUpdateCrag(t *testing.T) {
 	})
 }
 func TestDeleteCrag(t *testing.T) {
-	MockStore := returnPrePopulatedMockStore(t, false)
+	MockStore := returnPrePopulatedMockStore(t, false, false)
 
 	t.Run("Testing Delete Crag", func(t *testing.T) {
 		id := 1
@@ -132,7 +132,12 @@ func returnCrag() *models.Crag {
 	return crag
 }
 
-func returnPrePopulatedMockStore(t *testing.T, climb bool) *SqlStore {
+func returnPrePopulatedMockStore(t *testing.T, climb bool, forecast bool) *SqlStore {
+
+	//probably dont need options, or this function - we need to edit the docker test file
+	//and update the db init to include these initial entries for the test database
+	//and then make a more obvious const for each climb, crag, weatherreport so its easier to test
+
 	store := CreateSqlStore(t)
 	log.Infof("CreatedStore %+v", store)
 	MockCrag := returnCrag()
@@ -147,6 +152,14 @@ func returnPrePopulatedMockStore(t *testing.T, climb bool) *SqlStore {
 		err = store.Stores.ClimbStore.StoreClimb(MockClimb)
 		if err != nil {
 			t.Fatalf("could not store climb because of this error: %s", err)
+		}
+	}
+
+	if forecast != false {
+		MockForecast := newForecast()
+		_, err = store.Stores.ForecastStore.AddForecast(MockForecast)
+		if err != nil {
+			t.Fatalf("could not store forecast because of error: %s", err)
 		}
 	}
 

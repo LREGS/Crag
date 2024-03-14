@@ -10,8 +10,10 @@ type SqlStore struct {
 }
 
 type SqlStoreStores struct {
-	CragStore  CragStore
-	ClimbStore *SqlClimbStore
+	CragStore CragStore
+	//this should be the interface not a pointer to the concrete type but cba to change this second
+	ClimbStore    *SqlClimbStore
+	ForecastStore *SqlForecastStore
 }
 
 type StoreConfig struct {
@@ -28,6 +30,7 @@ func NewSqlStore(c *StoreConfig) (*SqlStore, error) {
 
 	store.Stores.CragStore = NewCragStore(store)
 	store.Stores.ClimbStore = NewClimbStore(store)
+	store.Stores.ForecastStore = NewForecastStore(store)
 
 	return store, nil
 }

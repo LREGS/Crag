@@ -1,0 +1,42 @@
+package store
+
+// create table forecast(
+//     Id                  serial primary key, 
+//     Time                varchar(255),
+//     ScreenTemperature   double precision,
+//     FeelsLikeTemp       double precision, 
+//     WindSpeed           double precision,
+//     WindDirection       double precision,
+//     totalPrecipitation  double precision,
+//     ProbofPrecipitation int,
+//     Latitude            double precision,
+//     Longitude           double precision, 
+//     CragID INTEGER REFERENCES crag(Id)
+
+// );
+
+const addForecast = `insert into forecast(	
+	Time, 
+	ScreenTemperature,
+	FeelsLikeTemp,
+	WindSpeed, 
+	WindoDirection,
+	totalPrecipitation, 
+	ProbofPrecitipitation, 
+	Latitude, 
+	Longitude, 
+	CragID
+	)values(
+	$1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+	) RETURNING *`
+
+
+const getForecastByCrag = `select * from forecast where CragId = $1`
+
+const getForecastByDate = `select * from forecast where Time =$1`
+
+const getAllForecast = `select * from forecast ORDER BY Time`
+
+const deleteForecastByData = `DELETE FROM forecast WHERE data = $1`
+
+const deleteForecastById = `DELETE FROM forecast where Id = $1`
