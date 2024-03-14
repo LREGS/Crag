@@ -44,3 +44,38 @@ func (fs *SqlForecastStore) AddForecast(forecast models.DBForecast) (*models.DBF
 
 	return &forecast, err
 }
+
+const getForecastByCrag = `select * from forecast where CragId = $1`
+
+func (fs *SqlForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecast, error) {
+	rows, err := fs.Store.masterX.Query(getForecastByCrag, CragId)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []models.DBForecast
+
+	for rows.Next() {
+		var forecast models.DBForecast
+		err := rows.Scan(
+			&forecast.Id,
+			&forecast.Time,
+			&forecast.ScreenTemperature,
+			&forecast.FeelsLikeTemp,
+			&forecast.WindSpeed,
+			&forecast.WindDirection,
+			&forecast.TotalPrecipAmount,
+			&forecast.ProbOfPrecipitation,
+			&forecast.Latitude,
+			&forecast.Longitude,
+			&forecast.CragId)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, forecast)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}

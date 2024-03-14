@@ -18,3 +18,8 @@ type ClimbStore interface {
 	UpdateClimb(climb *models.Climb) (*models.Climb, error)
 	DeleteClimb(Id int) error
 }
+
+type ForecastStore interface {
+	AddForecast(models.DBForecast) (*models.DBForecast, error)
+	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
+}

@@ -32,7 +32,7 @@ func TestGetForecastByCrag(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Could not perform sql task because of this error: %s", err)
 		}
-		if len(resluts) > 0 != true {
+		if len(results) > 0 != true {
 			t.Fatalf("No forecasts were returned")
 		}
 

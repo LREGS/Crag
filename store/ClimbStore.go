@@ -27,7 +27,7 @@ const GetClimbsAtCrag = `SELECT * FROM climb WHERE CragID = $1`
 
 func (cs *SqlClimbStore) GetClimbsByCrag(CragId int) ([]models.Climb, error) {
 
-	rows, err := cs.Store.masterX.Query(GetClimbsAtCrag, 1)
+	rows, err := cs.Store.masterX.Query(GetClimbsAtCrag, CragId)
 	if err != nil {
 		return nil, err
 	}
