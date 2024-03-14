@@ -107,12 +107,9 @@ func TestDeleteClimb(t *testing.T) {
 			t.Fatalf("could not delete climb because of this error: %s", err)
 		}
 
-		res, err := MockStore.Stores.ClimbStore.GetClimbById(climb.Id)
-		if err != nil {
-			t.Fatalf("could not get climb because of err: %s", err)
-		}
-		if res != nil {
-			t.Fatalf("Climb still exists in DBs")
+		_, err = MockStore.Stores.ClimbStore.GetClimbById(climb.Id)
+		if err == nil {
+			t.Fatalf("Climb still exists in db")
 		}
 
 	})

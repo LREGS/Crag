@@ -177,7 +177,9 @@ func CreateTables(t *testing.T) error {
 		totalPrecipitation DOUBLE PRECISION,
 		ProbofPrecipitation INT,
 		Latitude DOUBLE PRECISION,
-		Longitude DOUBLE PRECISION
+		Longitude DOUBLE PRECISION,
+		CragID INTEGER REFERENCES crag(Id)
+
 	);`
 
 	_, err := db.Exec(query)
