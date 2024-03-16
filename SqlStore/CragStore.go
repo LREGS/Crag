@@ -24,8 +24,8 @@ func (cs *SqlCragStore) StoreCrag(crag *models.Crag) error {
 
 }
 
-func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
-	var c models.Crag
+func (cs *SqlCragStore) GetCrag(Id int) (*models.Crag, error) {
+	c := &models.Crag{}
 
 	query := `select Id, Name, Latitude, Longitude from crag where id = $1`
 
