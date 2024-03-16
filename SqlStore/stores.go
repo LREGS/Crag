@@ -9,7 +9,7 @@ import (
 type Store interface {
 	initConnect(*StoreConfig)
 	GetMasterX() *sql.DB
-	GetCragStore() *SqlCragStore
+	GetCragStore() CragStore
 }
 
 type CragStore interface {
