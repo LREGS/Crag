@@ -79,3 +79,46 @@ func (fs *SqlForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecast
 	}
 	return results, nil
 }
+
+const getAllForecast = `select * from forecast`
+
+func (fs *SqlForecastStore) GetAllForecasts() (map[int][]models.DBForecast, error) {
+	rows, err := fs.Store.masterX.Query(getAllForecast)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make(map[int][]models.DBForecast)
+
+	for rows.Next() {
+		var forecast models.DBForecast
+		err := rows.Scan(
+			&forecast.Id,
+			&forecast.Time,
+			&forecast.ScreenTemperature,
+			&forecast.FeelsLikeTemp,
+			&forecast.WindSpeed,
+			&forecast.WindDirection,
+			&forecast.TotalPrecipAmount,
+			&forecast.ProbOfPrecipitation,
+			&forecast.Latitude,
+			&forecast.Longitude,
+			&forecast.CragId)
+		if err != nil {
+			return nil, err
+		}
+		results[forecast.CragId] = append(results[forecast.CragId], forecast)
+
+	}
+	return results, nil
+}
+
+const deleteForecastById = `DELETE FROM forecast where Id = $1`
+
+func (fs *SqlForecastStore) DeleteForecastById(Id int) error {
+	_, err := fs.Store.masterX.Exec(deleteForecastById, Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

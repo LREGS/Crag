@@ -39,6 +39,35 @@ func TestGetForecastByCrag(t *testing.T) {
 	})
 }
 
+func TestGetAllForecasts(t *testing.T) {
+	MockStore := returnPrePopulatedMockStore(t, true, true)
+
+	t.Run("Testing get all forecasts", func(t *testing.T) {
+		results, err := MockStore.Stores.ForecastStore.GetAllForecasts()
+		if err != nil {
+			t.Fatalf("could not get forecasts because of error: %s", err)
+		}
+
+		if len(results) > 0 != true {
+			t.Fatalf("No forecasts were returned")
+		}
+		t.Logf("crag %+v was returned", results[0])
+	})
+}
+
+func TestDeleteForecast(t *testing.T) {
+	MockStore := returnPrePopulatedMockStore(t, true, true)
+
+	t.Run("Testing delete forecast", func(t *testing.T) {
+
+		const Id = 1
+		err := MockStore.Stores.ForecastStore.DeleteForecastById(Id)
+		if err != nil {
+			t.Fatalf("could not delete item becasue of err: %s", err)
+		}
+	})
+}
+
 func newForecast() models.DBForecast {
 	forecast := models.DBForecast{
 		Id:                  1,
