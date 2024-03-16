@@ -11,10 +11,10 @@ type Crag struct {
 }
 
 type Climb struct {
-	Id    int
-	Name  string
-	Grade string
-	Crag  *Crag
+	Id     int
+	Name   string
+	Grade  string
+	CragID int
 }
 
 type Report struct {
@@ -82,4 +82,5 @@ type DBForecast struct {
 	ProbOfPrecipitation float64
 	Latitude            float64
 	Longitude           float64
+	CragId              int
 }

@@ -1,0 +1,27 @@
+version: '3'
+services:
+  CragApp:
+    container_name: crag-container
+    image: 96d4ff0c578e
+    build: .
+    environment:
+      DATABASE_URL: "host=CragDb user=postgres password=postgres dbname=postgres sslmode=disable"
+    ports:
+      - "6969:6969"
+    depends_on:
+      - CragDb
+  
+  CragDb:
+    container_name: CragDb-container
+    image: postgres:12
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5431:5431"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}
