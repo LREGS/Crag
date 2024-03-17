@@ -13,6 +13,7 @@ type Store interface {
 }
 
 type CragStore interface {
+	//Do I not want to be returning the store instance so it can be checked whether the correct data was stored
 	StoreCrag(crag *models.Crag) (err error)
 	//reminder that im returning a copy of the crag and not a pointer for better type safety?!
 	GetCrag(Id int) (*models.Crag, error)

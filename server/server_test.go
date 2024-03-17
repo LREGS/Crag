@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -36,7 +38,20 @@ func (cs *MockCragStore) UpdateCragValue(name string, crag models.Crag) error {
 }
 func (cs *MockCragStore) StoreCrag(crag *models.Crag) (err error) {
 	// cs.crags = append(cs.crags, crag)
-	return nil
+
+	if crag == nil {
+		return errors.New("Crag is empty")
+	}
+
+	if crag.Name == "" {
+		return errors.New("Name field is empty")
+	}
+	_, ok := cs.crags[crag.Id]
+	if !ok {
+		cs.crags[crag.Id] = crag
+		return nil
+	}
+	return errors.New("Crag already exists")
 }
 
 func TestGetCrag(t *testing.T) {
@@ -86,6 +101,48 @@ func TestGetCrag(t *testing.T) {
 
 }
 
+func TestPostCrag(t *testing.T) {
+	store := &MockCragStore{crags: make(map[int]*models.Crag)}
+	srv := NewServer(store)
+
+	testCases := []models.Crag{
+		{Id: 1, Name: "Stanage", Latitude: 1.111, Longitude: 1.222},
+		{Id: 1, Name: "Dank", Latitude: 1.111, Longitude: 1.222},
+		{Id: 2, Name: "", Latitude: 1.111, Longitude: 1.222},
+	}
+
+	for _, tc := range testCases {
+		t.Run("Testing POST Crag", func(t *testing.T) {
+
+			reqBody, err := json.Marshal(tc)
+			if err != nil {
+				t.Fatalf("could not marhsall because of err %s", err)
+			}
+
+			request, err := newPostRequest(reqBody)
+			if err != nil {
+				t.Fatalf("error getting new request: %s", err)
+			}
+			response := httptest.NewRecorder()
+			srv.ServeHTTP(response, request)
+
+			if tc.Name == "Stanage" {
+				assertStatus(t, response.Code, http.StatusOK)
+			}
+
+			if tc.Name == "Dank" {
+				assertStatus(t, response.Code, http.StatusConflict)
+			}
+
+			if tc.Name == "" {
+				assertStatus(t, response.Code, http.StatusBadRequest)
+			}
+
+		})
+	}
+
+}
+
 func assertStatus(t testing.TB, got, want int) {
 	t.Helper()
 	if got != want {
@@ -103,4 +160,18 @@ func assertResponseBody(t testing.TB, got, want string) {
 func newGetCragRequest(Id int) *http.Request {
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/crags/%d", Id), nil)
 	return req
+}
+
+func newPostRequest(body []byte) (*http.Request, error) {
+
+	//im sure im supposed to marshall in a different way but im not sure this doesnt seem right
+	req, err := http.NewRequest(http.MethodPost, "/crags", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	return req, nil
+
 }
