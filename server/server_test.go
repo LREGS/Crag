@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,8 @@ type MockCragStore struct {
 func (cs *MockCragStore) GetCrag(Id int) (*models.Crag, error) {
 	crag, ok := cs.crags[Id]
 	if !ok {
-		return nil, fmt.Errorf("Crag with Id %d not found", Id)
+		err := fmt.Sprintf("Crag with Id %d not found", Id)
+		return nil, errors.New(err)
 	}
 	return crag, nil
 
@@ -66,6 +68,7 @@ func TestGetCrag(t *testing.T) {
 
 	for _, testcase := range testCases {
 		t.Run("Testing Crag Get Request", func(t *testing.T) {
+			t.Logf("testing %d", testcase.cragID)
 			response := httptest.NewRecorder()
 			request := newGetCragRequest(testcase.cragID)
 			srv.ServeHTTP(response, request)

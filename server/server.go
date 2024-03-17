@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	store "github.com/lregs/Crag/SqlStore"
@@ -27,14 +28,32 @@ func addRoutes(mux *mux.Router, cragStore store.CragStore) {
 
 func handleGetCrag(CragStore store.CragStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const Id = 1
-		res, err := CragStore.GetCrag(Id)
+
+		vars := mux.Vars(r)
+		key := vars["key"]
+
+		cragID, err := strconv.Atoi(key)
 		if err != nil {
-			fmt.Printf("problem getting crag because of error %s", err)
+			fmt.Errorf("couldnt convert key to int: %s", err)
 		}
+
+		res, err := CragStore.GetCrag(cragID)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Printf("problem getting crag because of error %s", err)
+			return
+		}
+		if res == nil {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Printf("Crag with Id %d not found", cragID)
+			return
+		}
+
 		err = encode(w, r, http.StatusOK, res)
 		if err != nil {
 			fmt.Printf("error encoding: %s", err)
+			w.WriteHeader(http.StatusNotFound)
+
 		}
 	}
 }
@@ -49,31 +68,3 @@ func encode[T any](w http.ResponseWriter, r *http.Request, status int, v T) erro
 	return nil
 
 }
-
-// func handlePostCrag(store cragStore) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		vars := mux.Vars(r)
-// 		crag := vars["key"]
-// 		store.addCrag(crag)
-// 		w.WriteHeader(http.StatusAccepted)
-// 	}
-// }
-
-// func handleRoot() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Fprint(w, "Welcome to the root path!")
-// 	}
-
-// }
-
-// func NewServer(store cragStore) http.Handler {
-// 	mux := mux.NewRouter()
-// 	addRoutes(mux, store)
-
-// 	// var handler http.Handler = mux
-
-// 	//handler = middleware(handler)
-
-// 	return http.Handler(mux)
-
-// }
