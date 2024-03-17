@@ -1,21 +1,24 @@
-package store
+package util
 
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"testing"
+	"log"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
-	log "github.com/sirupsen/logrus"
 )
 
-var db *sql.DB
+type TestDBConfig struct {
+	Crag     bool
+	Forecast bool
+	Climb    bool
+}
 
-func TestMain(m *testing.M) {
+func ReturnTestDBConnection(config *TestDBConfig) (*sql.DB, error) {
+	var DB *sql.DB
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		log.Fatalf("Could not construct pool: %s", err)
@@ -55,90 +58,48 @@ func TestMain(m *testing.M) {
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	pool.MaxWait = 120 * time.Second
 	if err = pool.Retry(func() error {
-		db, err = sql.Open("postgres", databaseUrl)
+		DB, err = sql.Open("postgres", databaseUrl)
 		if err != nil {
 			return err
 		}
-		return db.Ping()
+		return DB.Ping()
 	}); err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
-	//Run tests
-	code := m.Run()
 
 	// You can't defer this because os.Exit doesn't care for defer
 	if err := pool.Purge(resource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 
-	os.Exit(code)
-}
-
-func TestTableCreation(t *testing.T) {
-	//I guess this is just testing whether each table exists
-	//We should flesh this out with more function that will test the rows in each table
-	CreateTables(t)
-	assertTables(t)
-}
-
-func assertTables(t *testing.T) {
-	tables := map[string]bool{
-		"crag":     true,
-		"climb":    true,
-		"report":   true,
-		"forecast": true,
+	err = CreateTables(DB)
+	if err != nil {
+		return nil, err
 	}
 
-	t.Run("Testing if tables correctly added", func(t *testing.T) {
-
-		Query := `
-		SELECT table_name
-		FROM information_schema.tables
-		WHERE table_schema = 'public' AND table_type = 'BASE TABLE' `
-
-		rows, err := db.Query(Query)
+	if config.Climb != false {
+		_, err := DB.Exec("INSERT INTO Climb (Name, Grade, CragID) VALUES ($1, $2, $3)", "Climb A", "5.9", 1)
 		if err != nil {
-			log.Fatalf("wasnt able to make queary because of %s:", err)
+			return nil, err
 		}
-
-		for rows.Next() {
-			var currentTable string
-			if err := rows.Scan(&currentTable); err != nil {
-				log.Fatal(err)
-			}
-			_, ok := tables[currentTable]
-
-			if ok {
-				continue
-			} else {
-				log.Fatalf("%s has been incorrectly added to the db, or doesnt exist in the test set", currentTable)
-			}
-		}
-
-	})
-	defer func() {
-		dropTables(t)
-	}()
-}
-
-func dropTables(t *testing.T) {
-	tables := map[string]bool{
-		"crag":     true,
-		"climb":    true,
-		"report":   true,
-		"forecast": true,
 	}
-	for table := range tables {
-		query := fmt.Sprintf("Drop table if exists %s cascade", table)
-		_, err := db.Query(query)
+	if config.Crag != false {
+		_, err := DB.Exec("INSERT INTO Crag (Name, Latitude, Longitude) VALUES ($1, $2, $3)", "Example Crag 1", 40.7128, -74.0060)
 		if err != nil {
-			log.Fatalf("Error dropping table %s because of %s", sql.LevelRepeatableRead, err)
+			return nil, err
+		}
+	}
+	if config.Crag != false {
+		_, err := DB.Exec("INSERT INTO DBForecast (Time, ScreenTemperature, FeelsLikeTemp, WindSpeed, WindDirection, TotalPrecipAmount, ProbOfPrecipitation, Latitude, Longitude, CragId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", "2024-03-16 08:00:00", 20.5, 18.2, 10.3, 120.5, 0.0, 0.0, 40.7128, -74.0060, 1)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	return DB, nil
 }
 
-func CreateTables(t *testing.T) error {
+func CreateTables(DB *sql.DB) error {
 	query := `-- Drop tables if they exist
 	DROP TABLE IF EXISTS forecast;
 	DROP TABLE IF EXISTS report;
@@ -182,13 +143,9 @@ func CreateTables(t *testing.T) error {
 
 	);`
 
-	_, err := db.Exec(query)
+	_, err := DB.Exec(query)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-
-// func assertCragTable(t *testing.T)     {}
-// func assertReportTable(t *testing.T)   {}
-// func assertForecastTable(t *testing.T) {}
