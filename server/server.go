@@ -23,9 +23,28 @@ func addRoutes(mux *mux.Router, cragStore store.CragStore) {
 
 	// mux.PathPrefix("/crags/{key}").HandlerFunc(handlePostCrag(store)).Methods("POST")
 	mux.PathPrefix("/crags/{key}").HandlerFunc(handleGetCrag(cragStore)).Methods("GET")
+	mux.PathPrefix("/crags/{key}").HandlerFunc(handleDelCragById(cragStore)).Methods("DELETE")
 	mux.PathPrefix("/crags").HandlerFunc(handlePostCrag(cragStore)).Methods("POST")
 	// mux.HandleFunc("/", handleRoot()).Methods("GET")
 
+}
+
+func handleDelCragById(CragStore store.CragStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		IdStr := vars["key"]
+
+		Id, err := strconv.Atoi(IdStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		err = CragStore.DeleteCragByID(Id)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+	}
 }
 
 func handleGetCrag(CragStore store.CragStore) http.HandlerFunc {

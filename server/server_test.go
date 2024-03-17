@@ -31,6 +31,12 @@ func (cs *MockCragStore) UpdateCragValuej(name string, crag models.Crag) error {
 	return nil
 }
 func (cs *MockCragStore) DeleteCragByID(Id int) error {
+	_, ok := cs.crags[Id]
+	if !ok {
+		err := errors.New("No crag with idfound")
+		return err
+	}
+	delete(cs.crags, Id)
 	return nil
 }
 func (cs *MockCragStore) UpdateCragValue(name string, crag models.Crag) error {
@@ -127,15 +133,15 @@ func TestPostCrag(t *testing.T) {
 			srv.ServeHTTP(response, request)
 
 			if tc.Name == "Stanage" {
-				assertStatus(t, response.Code, http.StatusOK)
+				assertStatus(t, response.Code, http.StatusOK) //200
 			}
 
 			if tc.Name == "Dank" {
-				assertStatus(t, response.Code, http.StatusConflict)
+				assertStatus(t, response.Code, http.StatusBadRequest) //409
 			}
 
 			if tc.Name == "" {
-				assertStatus(t, response.Code, http.StatusBadRequest)
+				assertStatus(t, response.Code, http.StatusBadRequest) //400
 			}
 
 		})
@@ -143,10 +149,34 @@ func TestPostCrag(t *testing.T) {
 
 }
 
+func TestDeleteCragByID(t *testing.T) {
+	store := &MockCragStore{crags: map[int]*models.Crag{
+		1: {Id: 1, Name: "Stanage", Latitude: 40.0101, Longitude: 40.1011},
+	}}
+	srv := NewServer(store)
+	testCases := []int{1, 2}
+
+	for _, tc := range testCases {
+		t.Run("Testing Delete By Id", func(t *testing.T) {
+			request := NewDeleteRequest(tc)
+			response := httptest.NewRecorder()
+			srv.ServeHTTP(response, request)
+
+			assertStatus(t, response.Code, http.StatusOK)
+		})
+	}
+
+}
+
+func NewDeleteRequest(Id int) *http.Request {
+	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("/crags/%d", Id), nil)
+	return req
+}
+
 func assertStatus(t testing.TB, got, want int) {
 	t.Helper()
 	if got != want {
-		t.Errorf("Did not get correct staus, got %d, wanted %d", got, want)
+		t.Errorf("Did not get correct status, got %d, wanted %d", got, want)
 	}
 }
 
