@@ -11,14 +11,21 @@ import (
 	"github.com/lregs/Crag/models"
 )
 
+// we need to pass the whole sql store, not just crag store pls
 func NewServer(store store.CragStore) http.Handler {
 	mux := mux.NewRouter()
+	subrouter := mux.PathPrefix("/api/v1").Subrouter()
+	cragRouter := subrouter.PathPrefix("/crags").Subrouter()
 
 	addRoutes(mux, store)
+	addCragRoutes(cragRouter, store)
 
 	return mux
 }
 
+func addCragRoutes(r *mux.Router, s store.CragStore) {
+	r.PathPrefix("/{key}").HandlerFunc(handleGetCrag(s)).Methods("GET")
+}
 func addRoutes(mux *mux.Router, cragStore store.CragStore) {
 
 	// mux.PathPrefix("/crags/{key}").HandlerFunc(handlePostCrag(store)).Methods("POST")
