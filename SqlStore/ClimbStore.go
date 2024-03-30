@@ -15,12 +15,14 @@ func NewClimbStore(sqlStore *SqlStore) *SqlClimbStore {
 
 const StoreClimbQuery = `insert into climb(Name, Grade, CragID) VALUES($1,$2,$3)RETURNING *`
 
-func (cs *SqlClimbStore) StoreClimb(climb *models.Climb) error {
-	_, err := cs.Store.masterX.Exec(StoreClimbQuery, climb.Name, climb.Grade, climb.CragID)
+func (cs *SqlClimbStore) StoreClimb(climb *models.Climb) (*models.Climb, error) {
+	storedClimb := &models.Climb{}
+
+	err := cs.Store.masterX.QueryRow(StoreClimbQuery, climb.Name, climb.Grade, climb.CragID).Scan(storedClimb.Name, storedClimb.Grade, storedClimb.CragID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return storedClimb, nil
 }
 
 const GetClimbsAtCrag = `SELECT * FROM climb WHERE CragID = $1`

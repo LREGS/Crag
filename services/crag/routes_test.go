@@ -107,6 +107,7 @@ func TestGetCrag(t *testing.T) {
 			// we also need to assert that the returned json matches our expectations?!
 			if testcase.expectedResponse != "" {
 				assertStatus(t, response.Code, http.StatusOK)
+				//^^ we should be decoding the response here and checking against a model not a string
 				assertResponseBody(t, strings.TrimSpace(response.Body.String()), testcase.expectedResponse)
 
 			} else {
@@ -170,6 +171,8 @@ func TestPostCrag(t *testing.T) {
 	router := mux.NewRouter()
 	router.PathPrefix("/crags").HandlerFunc(handler.handlePostCrag()).Methods("POST")
 
+	//I actually think we want testCases to be their own struct with the testdata to be
+	//in their own struct as well so that we can have more granularity in the tests
 	testCases := []models.Crag{
 		{Id: 1, Name: "Stanage", Latitude: 1.111, Longitude: 1.222},
 		{Id: 1, Name: "Dank", Latitude: 1.111, Longitude: 1.222},
@@ -184,7 +187,7 @@ func TestPostCrag(t *testing.T) {
 				t.Fatalf("could not marhsall because of err %s", err)
 			}
 
-			request, err := newPostRequest(reqBody)
+			request, err := newPostRequest(reqBody, "/crags")
 			if err != nil {
 				t.Fatalf("error getting new request: %s", err)
 			}
@@ -230,10 +233,9 @@ func NewDeleteRequest(Id int) *http.Request {
 	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("/crags/%d", Id), nil)
 	return req
 }
-func newPostRequest(body []byte) (*http.Request, error) {
+func newPostRequest(body []byte, url string) (*http.Request, error) {
 
-	//im sure im supposed to marshall in a different way but im not sure this doesnt seem right
-	req, err := http.NewRequest(http.MethodPost, "/crags", bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}

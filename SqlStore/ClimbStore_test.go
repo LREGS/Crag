@@ -11,9 +11,10 @@ func TestAddClimb(t *testing.T) {
 
 	MockStore := returnPrePopulatedMockStore(t, false, false)
 
+	//need to test if the return value is correct
 	t.Run("Testing Add Climb", func(t *testing.T) {
 		climb := returnClimb()
-		err := MockStore.Stores.ClimbStore.StoreClimb(climb)
+		_, err := MockStore.Stores.ClimbStore.StoreClimb(climb)
 		if err != nil {
 			t.Fatalf("failed because of error: %s", err)
 		}

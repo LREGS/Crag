@@ -22,12 +22,13 @@ type CragStore interface {
 }
 
 type ClimbStore interface {
-	StoreClimb(climb *models.Climb) (err error)
+	StoreClimb(climb *models.Climb) (*models.Climb, error)
 	GetClimbsByCrag(CragId int) ([]*models.Climb, error)
 	GetAllClimbs() []*models.Climb
 	GetClimbById(Id int) (*models.Climb, error)
 	UpdateClimb(climb *models.Climb) (*models.Climb, error)
 	DeleteClimb(Id int) error
+	Validate(climb *models.Climb) error
 }
 
 type ForecastStore interface {

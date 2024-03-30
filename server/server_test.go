@@ -27,9 +27,6 @@ func (cs *MockCragStore) GetCrag(Id int) (*models.Crag, error) {
 
 }
 
-func (cs *MockCragStore) UpdateCragValuej(name string, crag models.Crag) error {
-	return nil
-}
 func (cs *MockCragStore) DeleteCragByID(Id int) error {
 	_, ok := cs.crags[Id]
 	if !ok {
@@ -39,9 +36,11 @@ func (cs *MockCragStore) DeleteCragByID(Id int) error {
 	delete(cs.crags, Id)
 	return nil
 }
+
 func (cs *MockCragStore) UpdateCragValue(name string, crag models.Crag) error {
 	return nil
 }
+
 func (cs *MockCragStore) StoreCrag(crag *models.Crag) (err error) {
 	// cs.crags = append(cs.crags, crag)
 
@@ -171,7 +170,7 @@ func TestDeleteCragByID(t *testing.T) {
 func NewDeleteRequest(Id int) *http.Request {
 	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("/crags/%d", Id), nil)
 	return req
-}
+}.I
 
 func assertStatus(t testing.TB, got, want int) {
 	t.Helper()

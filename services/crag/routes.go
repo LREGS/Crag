@@ -19,11 +19,12 @@ func NewHandler(store store.CragStore) *Handler {
 	return &Handler{store: store}
 }
 
-func (h *Handler) RegisterRouters(r *mux.Router) {
+func (h *Handler) RegisterRoutes(r *mux.Router) {
 	// "crags/..."
 	r.HandleFunc("/", h.handlePostCrag()).Methods("POST")
 	r.PathPrefix("/{key}").HandlerFunc(h.handleGetCrag()).Methods("GET")
 	r.PathPrefix("/{key}").HandlerFunc(h.handleDelCragById()).Methods("DELETE")
+	r.PathPrefix("/{key}").HandlerFunc(h.handlePostCrag()).Methods("POST")
 }
 
 func (h *Handler) handlePostCrag() http.HandlerFunc {
@@ -43,6 +44,10 @@ func (h *Handler) handlePostCrag() http.HandlerFunc {
 	}
 }
 
+// this isnt really complete because im usre we're going to want to get forecast with crag
+// but at the same time forecast is linked to cragID so I guess when we get crag to display on front end
+// you just get the corresponding forecast at the same time this way their storage etc is seperate and linked
+// only through the integer key
 func (h *Handler) handleGetCrag() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
