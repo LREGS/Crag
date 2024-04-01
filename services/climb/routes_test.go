@@ -61,11 +61,18 @@ func (s *MockClimbStore) GetClimbsByCrag(CragId int) ([]*models.Climb, error) {
 
 // why are we not returning an error here?!
 func (s *MockClimbStore) GetAllClimbs() []*models.Climb {
-	return []*models.Climb{}
+	res := []*models.Climb{}
+	for _, crag := range s.climbs {
+		res = append(res, crag)
+	}
+	return res
 }
 
 func (s MockClimbStore) GetClimbById(Id int) (*models.Climb, error) {
-	return nil, nil
+	if Id != 1 {
+		return nil, errors.New("Invalid Id ")
+	}
+	return s.climbs[Id], nil
 }
 
 func (s MockClimbStore) UpdateClimb(climb *models.Climb) (*models.Climb, error) {
@@ -75,6 +82,10 @@ func (s MockClimbStore) UpdateClimb(climb *models.Climb) (*models.Climb, error) 
 // pretty sure we want to be returning an instance of the delete climb for data validation
 func (s *MockClimbStore) DeleteClimb(Id int) error {
 	return nil
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 func TestPostClimb(t *testing.T) {
@@ -269,8 +280,153 @@ func TestGetClimbsByCrag(t *testing.T) {
 	}
 }
 
-type ErrorResponse struct {
-	Error string `json:"error"`
+func TestGetAllClimbs(t *testing.T) {
+	store := &MockClimbStore{
+		climbs: map[int]*models.Climb{
+			1: &models.Climb{
+				Id:     1,
+				Name:   "Harvey Oswald",
+				Grade:  "v2",
+				CragID: 1,
+			},
+		},
+	}
+	if store == nil || store.climbs == nil {
+		t.Fatalf("store or store.climbs is nil")
+	}
+
+	handler := NewHandler(store)
+	router := mux.NewRouter()
+	router.PathPrefix("/climb/all").HandlerFunc(handler.HandleGetAllClimbs()).Methods("GET")
+
+	//would we eventually want to get all crag info at the same time so we can return what crag these climbs belong too also instead of cragID"
+
+	// need to add more test cases
+	testCases := []struct {
+		Name              string
+		ExptectedResponse []*models.Climb
+		ExpectedCode      int
+	}{
+		{
+			Name: "Get",
+			ExptectedResponse: []*models.Climb{
+				&models.Climb{
+					Id:     1,
+					Name:   "Harvey Oswald",
+					Grade:  "v2",
+					CragID: 1,
+				},
+			},
+			ExpectedCode: 200,
+		},
+	}
+	t.Run(fmt.Sprintf("testing,%s", testCases[0].Name), func(t *testing.T) {
+		url := "/climb/all"
+		request := util.NewGetRequest(url)
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, request)
+
+		util.AssertStatus(t, response.Code, http.StatusOK)
+
+		var climbs []*models.Climb
+
+		_, err := util.DecodeResponse(response.Body, &climbs)
+		if err != nil {
+			t.Fatalf("Decoding Response failed because of err: %s", err)
+		}
+		if !reflect.DeepEqual(climbs[0].Name, "Harvey Oswald") {
+			t.Fatalf("return value did not match expected")
+		}
+
+	})
 }
 
-// func checkError()
+func TestGetClimbById(t *testing.T) {
+	store := &MockClimbStore{
+		climbs: map[int]*models.Climb{
+			1: &models.Climb{
+				Id:     1,
+				Name:   "Harvey Oswald",
+				Grade:  "v2",
+				CragID: 1,
+			},
+		},
+	}
+	if store == nil || store.climbs == nil {
+		t.Fatalf("store or store.climbs is nil")
+	}
+
+	handler := NewHandler(store)
+	router := mux.NewRouter()
+	router.PathPrefix("/climb/{Id}").HandlerFunc(handler.HandleGetClimbById()).Methods("GET")
+
+	testCases := []struct {
+		Name              string
+		Id                int
+		InvId             string
+		ExptectedResponse *models.Climb
+		ExpectedCode      int
+		ExpectedError     bool
+	}{
+		{
+			Name:  "Correct Id",
+			Id:    1,
+			InvId: "",
+			ExptectedResponse: &models.Climb{
+				Id:     1,
+				Name:   "Harvey Oswald",
+				Grade:  "v2",
+				CragID: 1,
+			},
+			ExpectedCode:  200,
+			ExpectedError: false,
+		},
+		{
+			Name:              "Invalid Id",
+			Id:                100,
+			InvId:             "",
+			ExptectedResponse: nil,
+			ExpectedCode:      400,
+			ExpectedError:     true, //I guess we actually add the error when we know it
+
+		},
+		//In go it has to be an int, I guess the client could send the wrong type?
+		// {
+		// 	Name:              "Invalid ID type",
+		// 	Id:                0,
+		// 	InvId:             "One",
+		// 	ExptectedResponse: nil,
+		// 	ExpectedCode:      400,
+		// 	ExpectedError:     true,
+		// },
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("testing %s", tc.Name), func(t *testing.T) {
+			// var url string
+			// if tc.Id == 0 {
+			// 	url = "/climb/one"
+			// }
+			url := fmt.Sprintf("/climb/%d", tc.Id)
+			request := util.NewGetRequest(url)
+			response := httptest.NewRecorder()
+
+			router.ServeHTTP(response, request)
+
+			util.AssertStatus(t, response.Code, tc.ExpectedCode)
+
+			if tc.ExpectedCode == 200 {
+				var climb *models.Climb
+				_, err := util.DecodeResponse(response.Body, &climb)
+				if err != nil {
+					t.Fatalf("Could not decode response because of err: %s", err)
+				}
+
+				if !reflect.DeepEqual(climb, tc.ExptectedResponse) {
+					t.Fatalf("responsed object did not meet ")
+				}
+			}
+
+		})
+	}
+}
