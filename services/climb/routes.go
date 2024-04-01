@@ -55,12 +55,27 @@ func (h *Handler) handlePostClimb() http.HandlerFunc {
 func (h *Handler) handleGetClimbsByCrag() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		key, err := strconv.Atoi(vars["key"])
+		key, err := strconv.Atoi(vars["cragID"])
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not convert key to integer: %s", err))
 		}
 
-		h.store.GetClimbById(key)
+		res, err := h.store.GetClimbsByCrag(key)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting crags %s", err))
+		}
+
+		for _, climb := range res {
+			err := h.store.Validate(climb)
+			if err != nil {
+				util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not validate because of error %s", err))
+			}
+		}
+
+		err = util.Encode(w, http.StatusOK, res)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error ecoding %s", err))
+		}
 
 	}
 }

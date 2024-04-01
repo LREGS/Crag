@@ -17,3 +17,8 @@ func NewPostRequest(body []byte, url string) (*http.Request, error) {
 	return req, nil
 
 }
+
+func NewGetRequest(url string) *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	return req
+}

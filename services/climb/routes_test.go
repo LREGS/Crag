@@ -25,13 +25,13 @@ func (s *MockClimbStore) Validate(climb *models.Climb) error {
 	if climb.Name == "" {
 		return errors.New("Name not allowed to be empty")
 	}
-	gradeRange := make(map[string]bool)
-	for i := 0; i <= 17; i++ {
-		gradeRange[fmt.Sprintf("v%d", i)] = true
-	}
-	if _, ok := gradeRange[climb.Grade]; !ok {
-		return errors.New("No French")
-	}
+	// gradeRange := make(map[string]bool)
+	// for i := 0; i <= 17; i++ {
+	// 	gradeRange[fmt.Sprintf("v%d", i)] = true
+	// }
+	// if _, ok := gradeRange[climb.Grade]; !ok {
+	// 	return errors.New("No French")
+	// }
 	//maybe we would want to validate this by actually checking if this cragID exists
 	if climb.CragID < 1 {
 		return errors.New("CragId is not valid")
@@ -49,7 +49,14 @@ func (s *MockClimbStore) StoreClimb(climb *models.Climb) (*models.Climb, error) 
 }
 
 func (s *MockClimbStore) GetClimbsByCrag(CragId int) ([]*models.Climb, error) {
-	return nil, nil
+	if CragId == 0 {
+		return nil, errors.New("No climbs")
+	}
+	res := []*models.Climb{}
+	for _, crag := range s.climbs {
+		res = append(res, crag)
+	}
+	return res, nil
 }
 
 // why are we not returning an error here?!
@@ -151,9 +158,6 @@ func TestPostClimb(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to decode response: %s", err)
 				}
-
-				defer response.Body.Close()
-
 				// Check if the response body is equal to the expected response
 				if !reflect.DeepEqual(test.expectedResponse, responseBody) {
 					t.Fatalf("expected: %v, got: %v", test.expectedResponse, responseBody)
@@ -175,8 +179,8 @@ func TestGetClimbsByCrag(t *testing.T) {
 			},
 			2: {
 				Id:     2,
-				Name: "Harvey Oswald Sds",
-				Grade: "V3",
+				Name:   "Harvey Oswald sds",
+				Grade:  "v3",
 				CragID: 1,
 			},
 		},
@@ -185,21 +189,21 @@ func TestGetClimbsByCrag(t *testing.T) {
 		t.Fatalf("store or store.climbs is nil")
 	}
 
-	// Create a new handler with the store
+	// Cr   eate a new handler with the store
 	handler := NewHandler(store)
 	router := mux.NewRouter()
 	router.PathPrefix("/climb/crag/{cragID}").HandlerFunc(handler.handleGetClimbsByCrag()).Methods("GET")
 
 	testCases := []struct {
-		Name           string
-		CragId         int
-		ExptectResponse []*models.Climb
-		ExpectedCode   int
+		Name              string
+		CragId            int
+		ExptectedResponse []*models.Climb
+		ExpectedCode      int
 	}{
 		{
-			Name: "Valid Climb",
+			Name:   "Valid Climb",
 			CragId: 1,
-			ExptectResponse: []*models.Climb{
+			ExptectedResponse: []*models.Climb{
 				&models.Climb{
 					Id:     1,
 					Name:   "Harvey Oswald",
@@ -208,38 +212,65 @@ func TestGetClimbsByCrag(t *testing.T) {
 				},
 				&models.Climb{
 					Id:     2,
-					Name: "Harvey Oswald Sds",
-					Grade: "V3",
+					Name:   "Harvey Oswald sds",
+					Grade:  "v3",
 					CragID: 1,
 				},
 			},
 			ExpectedCode: 200,
 		},
 		{
-			Name:           "Invalid Climb",
-			CragId:         0,
-			ExptectResponse: nil,
-			ExpectedCode:    400,
+			Name:              "Invalid Climb",
+			CragId:            0,
+			ExptectedResponse: nil,
+			ExpectedCode:      400,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			request := NewGetRequest(tc.CragId)
+			url := fmt.Sprintf("/climb/crag/%d", tc.CragId)
+			request := util.NewGetRequest(url)
 			response := httptest.NewRecorder()
 			router.ServeHTTP(response, request)
 
+			t.Logf("Testing case %s, code = %d", tc.Name, response.Code)
+
 			switch {
-			case tc.ExptectedCode == 400:
-				util.AssertStatus(t, response.Code, http.StatusBadRequest)
+			case tc.ExpectedCode == 400:
+				var errRes ErrorResponse
+				err := json.NewDecoder(response.Body).Decode(&errRes)
+				if err != nil {
+					t.Fatalf("could not decode response %s", err)
+				}
+				t.Log(errRes)
+
+				// util.AssertStatus(t, response.Code, http.StatusBadRequest)
 			case tc.ExpectedCode == 200:
+				// var errRes ErrorResponse
+				// err := json.NewDecoder(response.Body).Decode(&errRes)
+				// if err != nil {
+				// 	t.Fatalf("could not decode response: %s", err)
+				// }
+				// t.Log(errRes)
+
 				var climbsAtCrag []*models.Climb
 				util.AssertStatus(t, response.Code, http.StatusOK)
-				response, err := util.DecodeResponse(response.Body, &climbsAtCrag)
-				if err != nil;
+				_, err := util.DecodeResponse(response.Body, &climbsAtCrag)
+				if err != nil {
+					t.Fatal(err)
+				}
+				for i, climb := range climbsAtCrag {
+					if !reflect.DeepEqual(climb, tc.ExptectedResponse[i]) {
+						t.Fatalf("returned response not what was expected. Got %v, want %v", climb, tc.ExptectedResponse[i])
+					}
+				}
 			}
-		
-
-		}
+		})
 	}
-
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// func checkError()

@@ -117,3 +117,7 @@ func (cs *SqlClimbStore) DeleteClimb(Id int) error {
 	}
 	return nil
 }
+
+func (cs *SqlClimbStore) Validate(*models.Climb) error {
+	return nil
+}
