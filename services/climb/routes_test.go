@@ -76,7 +76,7 @@ func (s MockClimbStore) GetClimbById(Id int) (*models.Climb, error) {
 }
 
 func (s MockClimbStore) UpdateClimb(climb *models.Climb) (*models.Climb, error) {
-	return nil, nil
+	return nil, errors.New("Error")
 }
 
 // pretty sure we want to be returning an instance of the delete climb for data validation
@@ -429,4 +429,79 @@ func TestGetClimbById(t *testing.T) {
 
 		})
 	}
+}
+
+func TestUpdateClimbById(t *testing.T) {
+	store := &MockClimbStore{
+		climbs: map[int]*models.Climb{
+			1: &models.Climb{
+				Id:     1,
+				Name:   "Harvey Oswald",
+				Grade:  "v2",
+				CragID: 1,
+			},
+		},
+	}
+	if store == nil || store.climbs == nil {
+		t.Fatalf("store or store.climbs is nil")
+	}
+
+	t.Run("Testing Valid Update", func(t *testing.T) {
+		handler := NewHandler(store)
+		router := mux.NewRouter()
+		router.PathPrefix("/climb/").HandlerFunc(handler.HandleUpdateClimb()).Methods("PUT")
+
+		response := httptest.NewRecorder()
+
+		updatedClimb := &models.Climb{
+			Id:     1,
+			Name:   "Harvey Oswald",
+			Grade:  "v7",
+			CragID: 1,
+		}
+
+		url := "/climb"
+
+		body, _ := json.Marshal(updatedClimb)
+
+		request, err := util.NewPutRequest(body, url)
+		if err != nil {
+			t.Fatalf("failed generating push request becauseo of err : %s", err)
+		}
+
+		router.ServeHTTP(response, request)
+
+		util.AssertStatus(t, response.Code, http.StatusOK)
+
+	})
+	// testCases := []struct {
+	// 	Name              string
+	// 	Id                int
+	// 	InvId             string
+	// 	ExptectedResponse *models.Climb
+	// 	ExpectedCode      int
+	// 	ExpectedError     bool
+	// }{
+	// 	{
+	// 		Name:  "Correct Update",
+	// 		Id:    1,
+	// 		InvId: "",
+	// 		ExptectedResponse: &models.Climb{
+	// 			Id:     1,
+	// 			Name:   "Harvey Oswald",
+	// 			Grade:  "v10",
+	// 			CragID: 1,
+	// 		},
+	// 		ExpectedCode:  200,
+	// 		ExpectedError: false,
+	// 	},
+	// 	{
+	// 		Name:              "Invalid Update",
+	// 		Id:                1,
+	// 		InvId:             "",
+	// 		ExptectedResponse: nil,
+	// 		ExpectedCode:      400,
+	// 		ExpectedError:     true, //I guess we actually add the error when we know it
+
+	// 	},
 }

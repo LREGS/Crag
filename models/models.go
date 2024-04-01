@@ -11,10 +11,10 @@ type Crag struct {
 }
 
 type Climb struct {
-	Id     int
-	Name   string
-	Grade  string
-	CragID int
+	Id     int    `json:"Id"`
+	Name   string `json:"Name"`
+	Grade  string `json:"Grade"`
+	CragID int    `json:"CragID"`
 }
 
 type Report struct {

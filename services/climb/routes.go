@@ -26,6 +26,7 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/crag/{cragID}", h.handleGetClimbsByCrag()).Methods("GET")
 	r.HandleFunc("/all", h.HandleGetAllClimbs()).Methods("GET")
 	r.HandleFunc("/{Id}", h.HandleGetClimbById()).Methods("GET")
+	r.HandleFunc("/", h.HandleUpdateClimb()).Methods("PUT")
 
 }
 
@@ -112,5 +113,29 @@ func (h *Handler) HandleGetClimbById() http.HandlerFunc {
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not encode because of error: %s", err))
 		}
+	}
+}
+
+func (h *Handler) HandleUpdateClimb() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		updatedClimb := &models.Climb{}
+
+		err := util.Decode(r, updatedClimb)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Coud not decode request because of err: %s", err))
+		}
+
+		resData, err := h.store.UpdateClimb(updatedClimb)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Could not update climb because of err: %s", err))
+		}
+
+		err = util.Encode(w, http.StatusOK, resData)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Coud not encode request because of err: %s", err))
+
+		}
+
 	}
 }
