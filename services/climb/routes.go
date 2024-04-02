@@ -86,7 +86,8 @@ func (h *Handler) handleGetClimbsByCrag() http.HandlerFunc {
 
 func (h *Handler) HandleGetAllClimbs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res := h.store.GetAllClimbs()
+		//please check this error
+		res, _ := h.store.GetAllClimbs()
 
 		err := util.Encode(w, http.StatusOK, res)
 		if err != nil {

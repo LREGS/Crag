@@ -1,7 +1,7 @@
 version: '3'
 services:
   CragApp:
-    container_name: crag-container
+    container_name: App-container
     image: 96d4ff0c578e
     build: .
     environment:

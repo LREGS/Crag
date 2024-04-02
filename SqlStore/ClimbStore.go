@@ -27,17 +27,17 @@ func (cs *SqlClimbStore) StoreClimb(climb *models.Climb) (*models.Climb, error) 
 
 const GetClimbsAtCrag = `SELECT * FROM climb WHERE CragID = $1`
 
-func (cs *SqlClimbStore) GetClimbsByCrag(CragId int) ([]models.Climb, error) {
+func (cs *SqlClimbStore) GetClimbsByCrag(CragId int) ([]*models.Climb, error) {
 
 	rows, err := cs.Store.masterX.Query(GetClimbsAtCrag, CragId)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []models.Climb
+	var results []*models.Climb
 
 	for rows.Next() {
-		var climb models.Climb
+		climb := &models.Climb{}
 		err := rows.Scan(&climb.Id, &climb.Name, &climb.Grade, &climb.CragID)
 		if err != nil {
 			return nil, err

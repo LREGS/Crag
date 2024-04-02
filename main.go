@@ -23,9 +23,12 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
+	"net/http"
 
 	_ "github.com/lib/pq"
+	store "github.com/lregs/Crag/SqlStore"
+	"github.com/lregs/Crag/server"
 )
 
 func main() {
@@ -36,30 +39,16 @@ func main() {
 	}
 	defer db.Close()
 
-	// Ping the database to check the connection
-	err = db.Ping()
+	store, err := store.NewSqlStore(&store.StoreConfig{DbConnection: db})
 	if err != nil {
-		panic(err)
+		log.Fatalf("Could not create store because of error: %s", err)
 	}
 
-	fmt.Println("Connected to the PostgreSQL database!")
+	srv := server.NewServer(store)
 
-	// Perform a simple query
-	rows, err := db.Query("SELECT version()")
+	err = http.ListenAndServe(":6969", srv)
 	if err != nil {
-		panic(err)
+		log.Fatalf("could not start srv because of err: %s", err)
 	}
-	defer rows.Close()
 
-	// Iterate over the rows
-	for rows.Next() {
-		var version string
-		if err := rows.Scan(&version); err != nil {
-			panic(err)
-		}
-		fmt.Println("PostgreSQL version:", version)
-	}
-	if err := rows.Err(); err != nil {
-		panic(err)
-	}
 }
