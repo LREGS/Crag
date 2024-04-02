@@ -24,6 +24,7 @@ type CragStore interface {
 type ClimbStore interface {
 	StoreClimb(climb *models.Climb) (*models.Climb, error)
 	GetClimbsByCrag(CragId int) ([]*models.Climb, error)
+	//this should be returning an error
 	GetAllClimbs() []*models.Climb
 	GetClimbById(Id int) (*models.Climb, error)
 	UpdateClimb(climb *models.Climb) (*models.Climb, error)

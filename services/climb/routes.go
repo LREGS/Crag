@@ -27,6 +27,7 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/all", h.HandleGetAllClimbs()).Methods("GET")
 	r.HandleFunc("/{Id}", h.HandleGetClimbById()).Methods("GET")
 	r.HandleFunc("/", h.HandleUpdateClimb()).Methods("PUT")
+	r.HandleFunc("/{Id}", h.HandleDeleteClimb()).Methods("DELETE")
 
 }
 
@@ -136,6 +137,24 @@ func (h *Handler) HandleUpdateClimb() http.HandlerFunc {
 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Coud not encode request because of err: %s", err))
 
 		}
+
+	}
+}
+
+func (h *Handler) HandleDeleteClimb() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		key, err := strconv.Atoi(vars["Id"])
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not get id from url"))
+		}
+
+		err = h.store.DeleteClimb(key)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("failed deleting climb: %s", err))
+		}
+		w.WriteHeader(http.StatusNoContent)
 
 	}
 }

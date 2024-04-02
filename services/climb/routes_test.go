@@ -86,6 +86,15 @@ func (s MockClimbStore) UpdateClimb(climb *models.Climb) (*models.Climb, error) 
 
 // pretty sure we want to be returning an instance of the delete climb for data validation
 func (s *MockClimbStore) DeleteClimb(Id int) error {
+
+	_, ok := s.climbs[Id]
+	if ok {
+		delete(s.climbs, Id)
+	} else {
+		return errors.New("value does not exist in db")
+	}
+
+	delete(s.climbs, 1)
 	return nil
 }
 
@@ -487,7 +496,7 @@ func TestUpdateClimbById(t *testing.T) {
 
 	})
 
-	t.Run("Testing Valid Update", func(t *testing.T) {
+	t.Run("Testing In-Valid Update", func(t *testing.T) {
 		handler := NewHandler(store)
 		router := mux.NewRouter()
 		router.PathPrefix("/climb/").HandlerFunc(handler.HandleUpdateClimb()).Methods("PUT")
@@ -512,7 +521,58 @@ func TestUpdateClimbById(t *testing.T) {
 
 		router.ServeHTTP(response, request)
 
+		//need to assert response
+		//maybe I need to be asserting certain errors as well and making sure im getting the correct response code each time
+
 		util.AssertStatus(t, response.Code, http.StatusBadRequest)
 
+	})
+}
+
+func TestDelCrag(t *testing.T) {
+	store := &MockClimbStore{
+		climbs: map[int]*models.Climb{
+			1: &models.Climb{
+				Id:     1,
+				Name:   "Harvey Oswald",
+				Grade:  "v2",
+				CragID: 1,
+			},
+		},
+	}
+	if store == nil || store.climbs == nil {
+		t.Fatalf("store or store.climbs is nil")
+	}
+
+	t.Run("Testing Valid Delete", func(t *testing.T) {
+		handler := NewHandler(store)
+		router := mux.NewRouter()
+		router.PathPrefix("/climb/{Id}").HandlerFunc(handler.HandleDeleteClimb()).Methods("DELETE")
+
+		response := httptest.NewRecorder()
+
+		url := "/climb/1"
+
+		request, _ := http.NewRequest(http.MethodDelete, url, nil)
+
+		router.ServeHTTP(response, request)
+
+		util.AssertStatus(t, response.Code, http.StatusNoContent)
+	})
+
+	t.Run("Testing Invalid ID", func(t *testing.T) {
+		handler := NewHandler(store)
+		router := mux.NewRouter()
+		router.PathPrefix("/climb/{Id}").HandlerFunc(handler.HandleDeleteClimb()).Methods("DELETE")
+
+		response := httptest.NewRecorder()
+
+		url := "/climb/3"
+
+		request, _ := http.NewRequest(http.MethodDelete, url, nil)
+
+		router.ServeHTTP(response, request)
+
+		util.AssertStatus(t, response.Code, http.StatusBadRequest)
 	})
 }
