@@ -84,3 +84,16 @@ type DBForecast struct {
 	Longitude           float64
 	CragId              int
 }
+
+type DBForecastPayload struct {
+	Time                string
+	ScreenTemperature   float64
+	FeelsLikeTemp       float64
+	WindSpeed           float64
+	WindDirection       float64
+	TotalPrecipAmount   float64
+	ProbOfPrecipitation float64
+	Latitude            float64
+	Longitude           float64
+	CragId              int
+}

@@ -28,8 +28,8 @@ const addForecast = `insert into forecast(
 	$1,$2,$3,$4,$5,$6,$7,$8,$9,$10
 	) RETURNING *`
 
-func (fs *SqlForecastStore) AddForecast(forecast models.DBForecast) (*models.DBForecast, error) {
-	_, err := fs.Store.masterX.Exec(
+func (fs *SqlForecastStore) AddForecast(forecast models.DBForecastPayload) (*models.DBForecast, error) {
+	row := fs.Store.masterX.QueryRow(
 		addForecast,
 		forecast.Time,
 		forecast.ScreenTemperature,
@@ -42,12 +42,28 @@ func (fs *SqlForecastStore) AddForecast(forecast models.DBForecast) (*models.DBF
 		forecast.Longitude,
 		forecast.CragId)
 
-	return &forecast, err
+	var storedForecast models.DBForecast
+	err := row.Scan(
+		&storedForecast.Id,
+		&forecast.Time,
+		&forecast.ScreenTemperature,
+		&forecast.FeelsLikeTemp,
+		&forecast.WindSpeed,
+		&forecast.WindDirection,
+		&forecast.TotalPrecipAmount,
+		&forecast.ProbOfPrecipitation,
+		&forecast.Latitude,
+		&forecast.Longitude,
+		&forecast.CragId)
+
+	return &storedForecast, err
 }
 
 const getForecastByCrag = `select * from forecast where CragId = $1`
 
 func (fs *SqlForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecast, error) {
+	//we're returning every forecast, need some function/ http endpoint that will serve
+	// presented data from the forecast (total rainfall etc)
 	rows, err := fs.Store.masterX.Query(getForecastByCrag, CragId)
 	if err != nil {
 		return nil, err

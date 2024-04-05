@@ -60,12 +60,12 @@ func (s *MockClimbStore) GetClimbsByCrag(CragId int) ([]*models.Climb, error) {
 }
 
 // why are we not returning an error here?!
-func (s *MockClimbStore) GetAllClimbs() []*models.Climb {
+func (s *MockClimbStore) GetAllClimbs() ([]*models.Climb, error) {
 	res := []*models.Climb{}
 	for _, crag := range s.climbs {
 		res = append(res, crag)
 	}
-	return res
+	return res, nil
 }
 
 func (s MockClimbStore) GetClimbById(Id int) (*models.Climb, error) {

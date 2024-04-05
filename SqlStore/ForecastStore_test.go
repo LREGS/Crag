@@ -68,9 +68,8 @@ func TestDeleteForecast(t *testing.T) {
 	})
 }
 
-func newForecast() models.DBForecast {
-	forecast := models.DBForecast{
-		Id:                  1,
+func newForecast() models.DBForecastPayload {
+	forecast := models.DBForecastPayload{
 		Time:                time.Now().Format(time.RFC3339),
 		ScreenTemperature:   25.0,
 		FeelsLikeTemp:       24.0,
