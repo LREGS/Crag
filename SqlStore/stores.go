@@ -15,7 +15,7 @@ type Store interface {
 type CragStore interface {
 	//Do I not want to be returning the store instance so it can be checked whether the correct data was stored
 	StoreCrag(crag *models.Crag) (err error)
-	//reminder that im returning a copy of the crag and not a pointer for better type safety?!
+	//reminder that im returning a copy of the crag and not a pointer for better type safety?! - should I be cause this has changed...
 	GetCrag(Id int) (*models.Crag, error)
 	UpdateCragValue(crag models.Crag) error
 	DeleteCragByID(Id int) error
@@ -24,7 +24,6 @@ type CragStore interface {
 type ClimbStore interface {
 	StoreClimb(climb *models.Climb) (*models.Climb, error)
 	GetClimbsByCrag(CragId int) ([]*models.Climb, error)
-	//this should be returning an error
 	GetAllClimbs() ([]*models.Climb, error)
 	GetClimbById(Id int) (*models.Climb, error)
 	UpdateClimb(climb *models.Climb) (*models.Climb, error)
@@ -35,6 +34,6 @@ type ClimbStore interface {
 type ForecastStore interface {
 	AddForecast(models.DBForecastPayload) (*models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
-	GetAllForecasts() (map[int][]models.DBForecast, error)
+	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) error
 }

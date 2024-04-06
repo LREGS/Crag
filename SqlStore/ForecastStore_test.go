@@ -43,7 +43,7 @@ func TestGetAllForecasts(t *testing.T) {
 	MockStore := returnPrePopulatedMockStore(t, true, true)
 
 	t.Run("Testing get all forecasts", func(t *testing.T) {
-		results, err := MockStore.Stores.ForecastStore.GetAllForecasts()
+		results, err := MockStore.Stores.ForecastStore.GetAllForecastsByCragId()
 		if err != nil {
 			t.Fatalf("could not get forecasts because of error: %s", err)
 		}

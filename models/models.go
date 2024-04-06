@@ -1,27 +1,27 @@
 package models
 
 type Crag struct {
-	Id        int
-	Name      string
-	Latitude  float64
-	Longitude float64
+	Id        int     `json:"id"`
+	Name      string  `json:"name"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 	// Climbs    []Climb      //many to one relationship not db field
 	// Reports   []Report     //many to one relationship not db field
-	// Forecast  []DBForecast //I dont think I have an int key in my forecast pointing to crag and this needs fixingf
+	// Forecast  []DBForecast //I dont think I have an int key in my forecast pointing to crag and this needs fixing
 }
 
 type Climb struct {
-	Id     int    `json:"Id"`
-	Name   string `json:"Name"`
-	Grade  string `json:"Grade"`
-	CragID int    `json:"CragID"`
+	Id     int    `json:"id"`
+	Name   string `json:"name"`
+	Grade  string `json:"grade"`
+	CragID int    `json:"cragId"`
 }
 
 type Report struct {
-	Id      int
-	Content string
-	Author  string
-	Crag    *Crag
+	Id      int    `json:"id"`
+	Content string `json:"content"`
+	Author  string `json:"author"`
+	Crag    *Crag  `json:"crag"`
 }
 
 type TimeSeriesData struct {
@@ -47,10 +47,10 @@ type TimeSeriesData struct {
 }
 
 type Feature struct {
-	Type        string `json:"type"`
-	Geometry    Geometry
-	Properties  Properties
-	Coordinates []float64 `json:"coordinates"`
+	Type        string     `json:"type"`
+	Geometry    Geometry   `json:"geometry"`
+	Properties  Properties `json:"properties"`
+	Coordinates []float64  `json:"coordinates"`
 }
 
 type Geometry struct {
@@ -72,28 +72,28 @@ type Forecast struct {
 // Selects the data we want from the response
 
 type DBForecast struct {
-	Id                  int
-	Time                string
-	ScreenTemperature   float64
-	FeelsLikeTemp       float64
-	WindSpeed           float64
-	WindDirection       float64
-	TotalPrecipAmount   float64
-	ProbOfPrecipitation float64
-	Latitude            float64
-	Longitude           float64
-	CragId              int
+	Id                  int     `json:"id"`
+	Time                string  `json:"time"`
+	ScreenTemperature   float64 `json:"screenTemperature"`
+	FeelsLikeTemp       float64 `json:"feelsLikeTemp"`
+	WindSpeed           float64 `json:"windSpeed"`
+	WindDirection       float64 `json:"windDirection"`
+	TotalPrecipAmount   float64 `json:"totalPrecipAmount"`
+	ProbOfPrecipitation float64 `json:"probOfPrecipitation"`
+	Latitude            float64 `json:"latitude"`
+	Longitude           float64 `json:"longitude"`
+	CragId              int     `json:"cragId"`
 }
 
 type DBForecastPayload struct {
-	Time                string
-	ScreenTemperature   float64
-	FeelsLikeTemp       float64
-	WindSpeed           float64
-	WindDirection       float64
-	TotalPrecipAmount   float64
-	ProbOfPrecipitation float64
-	Latitude            float64
-	Longitude           float64
-	CragId              int
+	Time                string  `json:"time"`
+	ScreenTemperature   float64 `json:"screenTemperature"`
+	FeelsLikeTemp       float64 `json:"feelsLikeTemp"`
+	WindSpeed           float64 `json:"windSpeed"`
+	WindDirection       float64 `json:"windDirection"`
+	TotalPrecipAmount   float64 `json:"totalPrecipAmount"`
+	ProbOfPrecipitation float64 `json:"probOfPrecipitation"`
+	Latitude            float64 `json:"latitude"`
+	Longitude           float64 `json:"longitude"`
+	CragId              int     `json:"cragId"`
 }

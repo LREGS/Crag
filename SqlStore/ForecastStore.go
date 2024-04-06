@@ -98,7 +98,7 @@ func (fs *SqlForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecast
 
 const getAllForecast = `select * from forecast`
 
-func (fs *SqlForecastStore) GetAllForecasts() (map[int][]models.DBForecast, error) {
+func (fs *SqlForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForecast, error) {
 	rows, err := fs.Store.masterX.Query(getAllForecast)
 	if err != nil {
 		return nil, err
