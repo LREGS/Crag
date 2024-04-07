@@ -32,7 +32,7 @@ type ClimbStore interface {
 }
 
 type ForecastStore interface {
-	AddForecast(models.DBForecastPayload) (*models.DBForecast, error)
+	AddForecast(*models.DBForecastPayload) (models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) error
