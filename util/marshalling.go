@@ -15,6 +15,7 @@ type Response struct {
 }
 
 func Encode(w http.ResponseWriter, status int, v any) error {
+	//why have I commented out the better code?!
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	// if err := json.NewEncoder(w).Encode(v); err != nil {

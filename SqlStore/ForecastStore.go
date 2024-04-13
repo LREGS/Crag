@@ -99,6 +99,9 @@ func (fs *SqlForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecast
 const getAllForecast = `select * from forecast`
 
 func (fs *SqlForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForecast, error) {
+
+	//this is returning every forecast for every crag we have
+
 	rows, err := fs.Store.masterX.Query(getAllForecast)
 	if err != nil {
 		return nil, err
@@ -136,5 +139,9 @@ func (fs *SqlForecastStore) DeleteForecastById(Id int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func Validate(*models.DBForecast) error {
 	return nil
 }

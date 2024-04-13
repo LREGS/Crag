@@ -15,19 +15,6 @@ type Handler struct {
 	store store.ForecastStore
 }
 
-type getResponse struct {
-	Data  interface{}
-	Error string
-}
-
-func (r *getResponse) GetError() string {
-	return r.Error
-}
-
-func (r *getResponse) GetData() interface{} {
-	return r.Data
-}
-
 func NewHanlder(store store.ForecastStore) *Handler {
 	return &Handler{
 		store: store,
@@ -43,44 +30,48 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 }
 
 func (h *Handler) handlePostForecast() http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var payload models.DBForecastPayload
+		payload := &models.DBForecastPayload{}
 
-		err := util.Decode(r, &payload)
+		err := util.Decode(r, payload)
 		if err != nil {
-			util.WriteResponse(w, http.StatusBadRequest, nil, err.Error())
+			http.Error(w, fmt.Sprintf("failed decoding payload %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		//shouldnt this be a copy?!
-		res, err := h.store.AddForecast(&payload)
+		res, err := h.store.AddForecast(payload)
 		if err != nil {
-			util.WriteResponse(w, http.StatusBadRequest, nil, err.Error())
+			http.Error(w, fmt.Sprintf("failed storing payload  %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		util.WriteResponse(w, http.StatusOK, res, "")
+		if res.Id == 1 {
+			http.Error(w, "empty value returned from store", 500)
+		}
+
+		err = util.Encode(w, http.StatusOK, &res)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error encoding response: %s", err), http.StatusInternalServerError)
+		}
 
 	}
 }
 
 func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		response := &getResponse{}
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
-			response.Error = "Could not get id from request"
-			util.RWriteResponse(w, http.StatusBadRequest, response)
+			http.Error(w, "Could not get id from request", http.StatusBadRequest)
 		}
 
 		data, err := h.store.GetForecastByCragId(key)
 		if err != nil {
-			response.Error = fmt.Sprintf("Store failed: %s", err)
+			http.Error(w, fmt.Sprintf("Getting data failed: %s", err), http.StatusInternalServerError)
 		}
-
-		response.Data = data
 
 		util.WriteResponse(w, 200, data, "")
 

@@ -8,6 +8,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/sirupsen/logrus v1.8.1
+	github.com/matryer/moq v0.17.0
 )
 
 require (

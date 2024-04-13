@@ -6,6 +6,8 @@ import (
 	"github.com/lregs/Crag/models"
 )
 
+//go:generate moq -out storess_test.go . CragStore
+
 type Store interface {
 	initConnect(*StoreConfig)
 	GetMasterX() *sql.DB
@@ -34,6 +36,8 @@ type ClimbStore interface {
 type ForecastStore interface {
 	AddForecast(*models.DBForecastPayload) (models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
+	//im not sure we need this unles we want to seperate it into days in the store/with the query??
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) error
+	Validate(*models.DBForecast) error
 }
