@@ -219,6 +219,39 @@ func TestAddForecast(t *testing.T) {
 
 		}
 
+		t.Run("Testing Invalid Data", func(t *testing.T) {
+
+			payload := models.Crag{Id: 2, Name: "dank", Longitude: 1.1, Latitude: 2.2}
+			body, err := json.Marshal(payload)
+			if err != nil {
+				t.Fatalf("marshall failed: %s", err)
+			}
+			response := httptest.NewRecorder()
+			request, err := util.NewPostRequest(body, "/forecast")
+			if err != nil {
+				t.Fatalf("new post request failed %s", err)
+			}
+
+			router.ServeHTTP(response, request)
+
+			if response.Code != 500 {
+				t.Fatalf("Server did not handle incorrect data type")
+			}
+
+		})
+
+		t.Run("Testing Invalid Request Method", func(t *testing.T) {
+			response := httptest.NewRecorder()
+			request := util.NewGetRequest("/forecast")
+
+			router.ServeHTTP(response, request)
+
+			if response.Code != 400 {
+				t.Fatalf("Accepted incorrect method")
+			}
+
+		})
+
 		// var res util.Response
 
 		// //just check response code to decide whether to unmarshaoll into error or not ffs

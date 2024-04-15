@@ -62,6 +62,11 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 
 func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method != "POST" {
+			http.Error(w, "Wrong request method", http.StatusBadRequest)
+		}
+
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
