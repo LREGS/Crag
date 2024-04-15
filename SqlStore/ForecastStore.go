@@ -1,6 +1,8 @@
 package store
 
 import (
+	"errors"
+
 	"github.com/lregs/Crag/models"
 )
 
@@ -29,6 +31,11 @@ const addForecast = `insert into forecast(
 	) RETURNING *`
 
 func (fs *SqlForecastStore) AddForecast(forecast models.DBForecastPayload) (*models.DBForecast, error) {
+
+	if forecast.Time == "" {
+		return nil, errors.New("no empty values allowed in forecast entry to db")
+	}
+
 	row := fs.Store.masterX.QueryRow(
 		addForecast,
 		forecast.Time,

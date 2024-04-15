@@ -3,12 +3,14 @@ package forecast
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gorilla/mux"
 	"github.com/lregs/Crag/models"
 	"github.com/lregs/Crag/util"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockForecastStore struct {
@@ -37,6 +39,11 @@ func (fs *MockForecastStore) returnDBForecast(p *models.DBForecastPayload, Id in
 }
 
 func (fs *MockForecastStore) AddForecast(newForecast *models.DBForecastPayload) (models.DBForecast, error) {
+
+	if newForecast.Time == "" {
+		f := models.DBForecast{}
+		return f, errors.New("no empty values allowed in forecast entry to db")
+	}
 
 	fToStore := fs.returnDBForecast(newForecast, (len(fs.forecast) + 1))
 
@@ -94,7 +101,7 @@ func (fs *MockForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecas
 			ProbOfPrecipitation: 30.0,
 			Latitude:            40.01,
 			Longitude:           40.11,
-			CragId:              1,
+			CragId:              2,
 		},
 		{
 			Id:                  2,
@@ -172,7 +179,7 @@ func TestAddForecast(t *testing.T) {
 		},
 	}
 
-	handler := NewHanlder(store)
+	handler := NewHandler(store)
 	router := mux.NewRouter()
 
 	router.PathPrefix("/forecast").HandlerFunc(handler.handlePostForecast()).Methods("POST")
@@ -218,98 +225,58 @@ func TestAddForecast(t *testing.T) {
 			}
 
 		}
+	})
 
-		t.Run("Testing Invalid Data", func(t *testing.T) {
+	t.Run("Testing Invalid Data", func(t *testing.T) {
 
-			payload := models.Crag{Id: 2, Name: "dank", Longitude: 1.1, Latitude: 2.2}
-			body, err := json.Marshal(payload)
-			if err != nil {
-				t.Fatalf("marshall failed: %s", err)
-			}
-			response := httptest.NewRecorder()
-			request, err := util.NewPostRequest(body, "/forecast")
-			if err != nil {
-				t.Fatalf("new post request failed %s", err)
-			}
+		payload := models.Crag{Id: 2, Name: "dank", Longitude: 1.1, Latitude: 2.2}
+		body, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("marshall failed: %s", err)
+		}
+		response := httptest.NewRecorder()
+		request, err := util.NewPostRequest(body, "/forecast")
+		if err != nil {
+			t.Fatalf("new post request failed %s", err)
+		}
 
-			router.ServeHTTP(response, request)
+		router.ServeHTTP(response, request)
 
-			if response.Code != 500 {
-				t.Fatalf("Server did not handle incorrect data type")
-			}
-
-		})
-
-		t.Run("Testing Invalid Request Method", func(t *testing.T) {
-			response := httptest.NewRecorder()
-			request := util.NewGetRequest("/forecast")
-
-			router.ServeHTTP(response, request)
-
-			if response.Code != 400 {
-				t.Fatalf("Accepted incorrect method")
-			}
-
-		})
-
-		// var res util.Response
-
-		// //just check response code to decide whether to unmarshaoll into error or not ffs
-
-		// _, err = util.DecodeResponse(response.Body, &res)
-		// if err != nil {
-		// 	t.Fatalf("could not decode because of err :%s", err)
-		// }
-
-		// if res.Error != "" {
-		// 	t.Fatalf("Error storing forecast: %s", res.Error)
-		// }
-
-		// if len(store.forecast) != 3 {
-		// 	t.Fatal("Nothing stored")
-		// }
-
-		// util.AssertStatus(t, response.Code, http.StatusOK)
+		if response.Code != 500 {
+			t.Fatalf("Server did not handle incorrect data type")
+		}
 
 	})
 
-	// t.Run("Testing Invalid Request Type", func(t *testing.T) {
-	// 	response := httptest.NewRecorder()
-	// 	request := util.NewGetRequest("/forecast")
+	t.Run("Testing Invalid Request Method", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request := util.NewGetRequest("/forecast")
 
-	// 	router.ServeHTTP(response, request)
+		router.ServeHTTP(response, request)
 
-	// 	util.AssertStatus(t, response.Code, http.StatusMethodNotAllowed)
-	// })
+		if response.Code != 405 {
+			t.Fatalf("Accepted incorrect method, code %d", response.Code)
+		}
 
-	// t.Run("Testing Invalid Data Type", func(t *testing.T) {
-	// 	response := httptest.NewRecorder()
+	})
 
-	// 	payload := models.Climb{
-	// 		Id:     1,
-	// 		Name:   "test",
-	// 		Grade:  "v2",
-	// 		CragID: 2,
-	// 	}
+	t.Run("Testing Empty Data", func(t *testing.T) {
+		payload := models.DBForecastPayload{}
+		response := httptest.NewRecorder()
 
-	// 	body, err := json.Marshal(payload)
-	// 	if err != nil {
-	// 		t.Fatalf("Marshal failed: %s", err)
-	// 	}
+		b, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("cannot unmarshal, %s", err)
+		}
 
-	// 	request, err := util.NewPostRequest(body, "/forecast")
-	// 	if err != nil {
-	// 		t.Fatalf("Getting request failed: %s", err)
-	// 	}
+		req, err := util.NewPostRequest(b, "/forecast")
+		if err != nil {
+			t.Fatalf("cannot create request %s", err)
+		}
 
-	// 	router.ServeHTTP(response, request)
+		router.ServeHTTP(response, req)
 
-	// 	util.CheckErrs(t, response, "invalid data")
-
-	// 	util.AssertStatus(t, response.Code, http.StatusBadRequest)
-
-	// })
-
+	})
 }
 
 func TestGetForecastByCragId(t *testing.T) {
@@ -357,7 +324,7 @@ func TestGetForecastByCragId(t *testing.T) {
 		},
 	}
 
-	handler := NewHanlder(store)
+	handler := NewHandler(store)
 	router := mux.NewRouter()
 
 	router.PathPrefix("/forecast/{Id}").HandlerFunc(handler.handleGetForecastByCragId()).Methods("GET")
@@ -368,35 +335,93 @@ func TestGetForecastByCragId(t *testing.T) {
 		request := util.NewGetRequest("/forecast/2")
 		router.ServeHTTP(response, request)
 
-		if response.Code == 200 {
-			var res []models.DBForecast
-			_, err := util.DecodeResponse(response.Body, &res)
-			if err != nil {
-				t.Fatalf("Could not decode response :%s", err)
-			}
+		if response.Code != 200 {
+			t.Fatalf("%d", response.Code)
 		}
 
-		// util.AssertStatus(t, response.Code, 200)
+		var res []models.DBForecast
+		_, err := util.DecodeResponse(response.Body, &res)
+		if err != nil {
+			t.Fatalf("Could not decode response :%s", err)
+		}
 
-		// var r getResponse
-
-		// _, err := util.DResponse(response.Body, &r)
-		// if err != nil {
-		// 	t.Fatalf("Could not decode response because of err: %s", err)
-		// }
-
-		// respErr := r.GetError()
-		// if respErr != "" {
-		// 	t.Fatalf("error in response %s", respErr)
-		// }
-
-		// data, ok := r.Data.([]models.DBForecast)
-		// if !ok {
-		// 	t.Fatalf("no data returned")
-		// }
-		// if data[0].Id != 1 {
-		// 	t.Fatalf("got %d wanted %d", data[0].Id, 1)
-		// }
+		assert.Equal(t, store.forecast[:2], res)
 
 	})
+
+	t.Run("Invalid CragID", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request := util.NewGetRequest("/forecast/dank")
+		router.ServeHTTP(response, request)
+
+		if response.Code != 400 {
+			t.Fatalf("got error code %d when sending string as int id type", response.Code)
+		}
+
+	})
+
+	t.Run("Invalid Method", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request, err := http.NewRequest("POST", "/forecast/1", nil)
+		if err != nil {
+			t.Fatalf("creating request failed %s", err)
+		}
+		router.ServeHTTP(response, request)
+
+		if response.Code != 405 {
+			t.Fatalf("got %d, but wanted code: %d", response.Code, 405)
+		}
+
+	})
+}
+
+func TestGetAllForecasts(t *testing.T) {
+	store := &MockForecastStore{
+		forecast: []models.DBForecast{
+			{
+				Id:                  1,
+				Time:                "2024-04-06T12:00:00Z",
+				ScreenTemperature:   20.5,
+				FeelsLikeTemp:       18.2,
+				WindSpeed:           10.0,
+				WindDirection:       180.0,
+				TotalPrecipAmount:   0.5,
+				ProbOfPrecipitation: 30.0,
+				Latitude:            40.01,
+				Longitude:           40.11,
+				CragId:              2,
+			},
+			{
+				Id:                  2,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              2,
+			},
+			{
+				Id:                  3,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              3,
+			},
+		},
+	}
+	handler := NewHandler(store)
+	router := mux.NewRouter()
+
+	router.PathPrefix("/forecast/all").HandlerFunc(handler.handleGetAllForecast()).Methods("GET")
+
 }

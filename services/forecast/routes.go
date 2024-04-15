@@ -15,7 +15,7 @@ type Handler struct {
 	store store.ForecastStore
 }
 
-func NewHanlder(store store.ForecastStore) *Handler {
+func NewHandler(store store.ForecastStore) *Handler {
 	return &Handler{
 		store: store,
 	}
@@ -33,6 +33,10 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		if r.Method != "POST" {
+			http.Error(w, "Wrong request method", http.StatusMethodNotAllowed)
+		}
+
 		payload := &models.DBForecastPayload{}
 
 		err := util.Decode(r, payload)
@@ -48,10 +52,12 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 			return
 		}
 
+		//is this here to just pass the test because its been some days
 		if res.Id == 1 {
 			http.Error(w, "empty value returned from store", 500)
 		}
 
+		//why &??
 		err = util.Encode(w, http.StatusOK, &res)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error encoding response: %s", err), http.StatusInternalServerError)
@@ -62,10 +68,6 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 
 func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		if r.Method != "POST" {
-			http.Error(w, "Wrong request method", http.StatusBadRequest)
-		}
 
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
@@ -78,7 +80,10 @@ func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Getting data failed: %s", err), http.StatusInternalServerError)
 		}
 
-		util.WriteResponse(w, 200, data, "")
+		err = util.Encode(w, http.StatusOK, data)
+		if err != nil {
+			http.Error(w, "Could not encode responde", http.StatusInternalServerError)
+		}
 
 	}
 }
