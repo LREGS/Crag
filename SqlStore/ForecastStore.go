@@ -107,7 +107,7 @@ const getAllForecast = `select * from forecast`
 
 func (fs *SqlForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForecast, error) {
 
-	//this is returning every forecast for every crag we have
+	//this is returning every forecast for every crag we have, not every forecast based on the crag Id
 
 	rows, err := fs.Store.masterX.Query(getAllForecast)
 	if err != nil {
@@ -141,6 +141,7 @@ func (fs *SqlForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForeca
 
 const deleteForecastById = `DELETE FROM forecast where Id = $1`
 
+// I should be returning an instance of the deleted data
 func (fs *SqlForecastStore) DeleteForecastById(Id int) error {
 	_, err := fs.Store.masterX.Exec(deleteForecastById, Id)
 	if err != nil {

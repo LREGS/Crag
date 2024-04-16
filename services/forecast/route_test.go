@@ -122,17 +122,53 @@ func (fs *MockForecastStore) GetForecastByCragId(CragId int) ([]models.DBForecas
 }
 
 func (fs *MockForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForecast, error) {
-
-	if len(fs.forecast) == 0 {
-		return nil, errors.New("DB is empty")
-	} else {
-		res := make(map[int][]models.DBForecast, 0)
-
-		for i, f := range fs.forecast {
-			res[i] = append(res[i], f)
-		}
-		return res, nil
+	data := map[int][]models.DBForecast{
+		2: {
+			{
+				Id:                  1,
+				Time:                "2024-04-06T12:00:00Z",
+				ScreenTemperature:   20.5,
+				FeelsLikeTemp:       18.2,
+				WindSpeed:           10.0,
+				WindDirection:       180.0,
+				TotalPrecipAmount:   0.5,
+				ProbOfPrecipitation: 30.0,
+				Latitude:            40.01,
+				Longitude:           40.11,
+				CragId:              2,
+			},
+			{
+				Id:                  2,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              2,
+			},
+		},
+		3: {
+			{
+				Id:                  3,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              3,
+			},
+		},
 	}
+
+	return data, nil
 }
 func (fs *MockForecastStore) DeleteForecastById(Id int) error {
 	if len(fs.forecast) == 0 {
@@ -423,5 +459,129 @@ func TestGetAllForecasts(t *testing.T) {
 	router := mux.NewRouter()
 
 	router.PathPrefix("/forecast/all").HandlerFunc(handler.handleGetAllForecast()).Methods("GET")
+
+	t.Run("Testing Valid Request", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request := util.NewGetRequest("/forecast/all")
+
+		router.ServeHTTP(response, request)
+
+		//little reminder for future me, when we initialise a value like this its nil.
+		//To deocode, we need to provide a pointer to this value, not a copy of it
+		//or else we will get nil and itll be really annoying
+		var data map[int][]models.DBForecast
+
+		_, err := util.DecodeResponse(response.Body, &data)
+		if err != nil {
+			t.Fatalf("Could not decode response %s", err)
+		}
+
+		testData := map[int][]models.DBForecast{
+			2: {
+				{
+					Id:                  1,
+					Time:                "2024-04-06T12:00:00Z",
+					ScreenTemperature:   20.5,
+					FeelsLikeTemp:       18.2,
+					WindSpeed:           10.0,
+					WindDirection:       180.0,
+					TotalPrecipAmount:   0.5,
+					ProbOfPrecipitation: 30.0,
+					Latitude:            40.01,
+					Longitude:           40.11,
+					CragId:              2,
+				},
+				{
+					Id:                  2,
+					Time:                "2024-04-06T13:00:00Z",
+					ScreenTemperature:   22.3,
+					FeelsLikeTemp:       20.1,
+					WindSpeed:           12.5,
+					WindDirection:       200.0,
+					TotalPrecipAmount:   0.8,
+					ProbOfPrecipitation: 40.0,
+					Latitude:            41.01,
+					Longitude:           41.11,
+					CragId:              2,
+				},
+			},
+			3: {
+				{
+					Id:                  3,
+					Time:                "2024-04-06T13:00:00Z",
+					ScreenTemperature:   22.3,
+					FeelsLikeTemp:       20.1,
+					WindSpeed:           12.5,
+					WindDirection:       200.0,
+					TotalPrecipAmount:   0.8,
+					ProbOfPrecipitation: 40.0,
+					Latitude:            41.01,
+					Longitude:           41.11,
+					CragId:              3,
+				},
+			},
+		}
+
+		assert.Equal(t, testData, data)
+	})
+}
+
+func TestDeleteForecast(t *testing.T) {
+	store := &MockForecastStore{
+		forecast: []models.DBForecast{
+			{
+				Id:                  1,
+				Time:                "2024-04-06T12:00:00Z",
+				ScreenTemperature:   20.5,
+				FeelsLikeTemp:       18.2,
+				WindSpeed:           10.0,
+				WindDirection:       180.0,
+				TotalPrecipAmount:   0.5,
+				ProbOfPrecipitation: 30.0,
+				Latitude:            40.01,
+				Longitude:           40.11,
+				CragId:              2,
+			},
+			{
+				Id:                  2,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              2,
+			},
+			{
+				Id:                  3,
+				Time:                "2024-04-06T13:00:00Z",
+				ScreenTemperature:   22.3,
+				FeelsLikeTemp:       20.1,
+				WindSpeed:           12.5,
+				WindDirection:       200.0,
+				TotalPrecipAmount:   0.8,
+				ProbOfPrecipitation: 40.0,
+				Latitude:            41.01,
+				Longitude:           41.11,
+				CragId:              3,
+			},
+		},
+	}
+	handler := NewHandler(store)
+	router := mux.NewRouter()
+
+	router.PathPrefix("/forecast/{Id}").HandlerFunc(handler.handleDeleteForecastById()).Methods("GET")
+
+	t.Run("Testing Valid ID", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request := util.NewGetRequest("/forecast/1")
+
+		router.ServeHTTP(response, request)
+
+		assert.Equal(t, response.Code, 204)
+	})
 
 }

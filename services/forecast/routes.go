@@ -26,7 +26,7 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("", h.handlePostForecast()).Methods("POST")
 	r.HandleFunc("/{Id}", h.handleGetForecastByCragId()).Methods("GET")
 	r.HandleFunc("/all", h.handleGetAllForecast()).Methods("GET")
-	r.HandleFunc("/{key}", h.handleDeleteForecastById()).Methods("DELETE")
+	r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
 }
 
 func (h *Handler) handlePostForecast() http.HandlerFunc {
@@ -91,11 +91,31 @@ func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
 func (h *Handler) handleGetAllForecast() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		data, err := h.store.GetAllForecastsByCragId()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not get forecast %s", err), http.StatusInternalServerError)
+		}
+
+		err = util.Encode(w, 200, data)
+		if err != nil {
+			http.Error(w, "Could not encode data", http.StatusInternalServerError)
+		}
 	}
 }
 
 func (h *Handler) handleDeleteForecastById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		vars := mux.Vars(r)
+		key, err := strconv.Atoi(vars["Id"])
+		if err != nil {
+			http.Error(w, "Could not get id from request", http.StatusBadRequest)
+		}
+
+		if err := h.store.DeleteForecastById(key); err != nil {
+			http.Error(w, fmt.Sprintf("Could not delete err: %s", err), 500)
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
