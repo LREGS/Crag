@@ -53,6 +53,6 @@ func main() {
 		fmt.Print(err)
 	}
 
-	fmt.Print(d)
+	fmt.Print(d.Features)
 
 }
