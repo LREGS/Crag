@@ -34,6 +34,9 @@ func Decode(r *http.Request, v any) error {
 	if r.Body == nil {
 		return fmt.Errorf("missing body")
 	}
+
+	defer r.Body.Close()
+
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
