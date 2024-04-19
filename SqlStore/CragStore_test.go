@@ -28,24 +28,19 @@ func TestAddCrag(t *testing.T) {
 	// CragStore := store.Stores.CragStore
 
 	t.Run("Testing add crag", func(t *testing.T) {
-		//I dont have a type for climbs, forecast, or reports yet and we need to make
-		//baby steps with out testing so they will just be null types atm
 		crag := returnCrag()
 
-		log.Infof("store: %+v", store)
-		log.Infof("Cragstore = %+v", store.Stores.CragStore)
-
-		err := store.Stores.CragStore.StoreCrag(crag)
+		d, err := store.Stores.CragStore.StoreCrag(crag)
 		if err != nil {
 			log.Fatalf("was not able to store Crag because of err: %s", err)
 		}
 
-		testData := &models.Crag{Id: 1}
+		testData := models.CragPayload{}
 
 		query := "select name, latitude, longitude from crag where id = $1"
-		err = db.QueryRow(query, crag.Id).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
+		err = db.QueryRow(query, &d.Id).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
 		if err != nil {
-			log.Fatalf("wasn't able to retrieve data from db: %s", err)
+			log.Fatalf("failed getting data for id %d: %s", d.Id, err)
 		}
 
 		if !reflect.DeepEqual(testData, crag) {
@@ -123,9 +118,8 @@ func TestDeleteCrag(t *testing.T) {
 	})
 }
 
-func returnCrag() *models.Crag {
-	crag := &models.Crag{
-		Id:        1,
+func returnCrag() models.CragPayload {
+	crag := models.CragPayload{
 		Name:      "Stanage",
 		Latitude:  40.7128,
 		Longitude: -74.0060,
@@ -143,7 +137,7 @@ func returnPrePopulatedMockStore(t *testing.T, climb bool, forecast bool) *SqlSt
 	log.Infof("CreatedStore %+v", store)
 	MockCrag := returnCrag()
 	log.Infof("Created MockCrag %+v", MockCrag)
-	err := store.Stores.CragStore.StoreCrag(MockCrag)
+	_, err := store.Stores.CragStore.StoreCrag(MockCrag)
 	if err != nil {
 		t.Fatalf("Couldn't store crag because of this error: %s", err)
 	}

@@ -5,13 +5,22 @@ type Crag struct {
 	Name      string  `json:"name"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	// Climbs    []Climb      //many to one relationship not db field
-	// Reports   []Report     //many to one relationship not db field
-	// Forecast  []DBForecast //I dont think I have an int key in my forecast pointing to crag and this needs fixing
+}
+
+type CragPayload struct {
+	Name      string  `json:"name"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 type Climb struct {
 	Id     int    `json:"id"`
+	Name   string `json:"name"`
+	Grade  string `json:"grade"`
+	CragID int    `json:"cragId"`
+}
+
+type ClimbPayload struct {
 	Name   string `json:"name"`
 	Grade  string `json:"grade"`
 	CragID int    `json:"cragId"`

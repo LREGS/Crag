@@ -1,5 +1,5 @@
 package met
 
-func TestingGetForecast(t *Testing.t) {
+// func TestingGetForecast(t *Testing.t) {
 
-}
+// }

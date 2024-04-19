@@ -13,14 +13,17 @@ func NewCragStore(sqlStore *SqlStore) *SqlCragStore {
 	return CS
 }
 
-func (cs *SqlCragStore) StoreCrag(crag *models.Crag) error {
+func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) {
 	query := `insert into crag(Name, Latitude, Longitude) values($1,$2,$3)`
 
-	_, err := cs.Store.masterX.Exec(query, crag.Name, crag.Latitude, crag.Longitude)
+	var storedCrag models.Crag
+
+	err := cs.Store.masterX.QueryRow(query, crag.Name, crag.Latitude, crag.Longitude).Scan(storedCrag.Id, storedCrag.Latitude, storedCrag.Longitude, storedCrag.Name)
 	if err != nil {
-		return err
+		return storedCrag, nil
 	}
-	return nil
+
+	return storedCrag, nil
 
 }
 
