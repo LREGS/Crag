@@ -24,14 +24,14 @@ DROP TABLE IF EXISTS crag;
 -- Create tables
 CREATE TABLE crag (
     Id SERIAL PRIMARY KEY, 
-    Name TEXT, 
+    Name TEXT UNIQUE, 
     Latitude DOUBLE PRECISION,
     Longitude DOUBLE PRECISION
 );
 
 CREATE TABLE climb (
     Id SERIAL PRIMARY KEY,
-    Name VARCHAR(255),
+    Name VARCHAR(255) UNIQUE,
     Grade VARCHAR(255),
     CragID INTEGER REFERENCES crag(Id)
 );
@@ -45,7 +45,7 @@ CREATE TABLE report (
 
 CREATE TABLE forecast (
     Id SERIAL PRIMARY KEY, 
-    Time VARCHAR(255),
+    Time VARCHAR(255) UNIQUE,
     ScreenTemperature DOUBLE PRECISION,
     FeelsLikeTemp DOUBLE PRECISION, 
     WindSpeed DOUBLE PRECISION,

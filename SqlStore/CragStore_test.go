@@ -1,8 +1,11 @@
 package store
 
+//this isnt a mock store, this is the store we're testing lol
+
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	models "github.com/lregs/Crag/models"
 	log "github.com/sirupsen/logrus"
@@ -35,21 +38,33 @@ func TestAddCrag(t *testing.T) {
 			log.Fatalf("was not able to store Crag because of err: %s", err)
 		}
 
-		testData := models.CragPayload{}
+		// testData := models.CragPayload{}
 
-		query := "select name, latitude, longitude from crag where id = $1"
-		err = db.QueryRow(query, &d.Id).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
-		if err != nil {
-			log.Fatalf("failed getting data for id %d: %s", d.Id, err)
-		}
+		// query := "select name, latitude, longitude from crag where id = $1"
+		// err = db.QueryRow(query, 1).Scan(&testData.Name, &testData.Latitude, &testData.Longitude)
+		// if err != nil {
+		// 	log.Fatalf("failed getting data for id 1: %s", err)
+		// }
 
-		if !reflect.DeepEqual(testData, crag) {
-			log.Fatalf("the returned data from the db does not match that of the inputted data")
-		}
+		assert.Equal(t, crag.Name, d.Name)
 
 		defer func() {
 			dropTables(t)
 		}()
+
+	})
+
+	t.Run("testing adding invalid data", func(t *testing.T) {
+		invalidCrag := models.CragPayload{
+			Name:      "",
+			Latitude:  0.0,
+			Longitude: 0.0,
+		}
+
+		_, err := store.Stores.CragStore.StoreCrag(invalidCrag)
+		if err == nil {
+			t.Fatal("no error returned when passing invalid crag to store")
+		}
 
 	})
 
@@ -59,47 +74,57 @@ func TestGetCrag(t *testing.T) {
 	MockStore := returnPrePopulatedMockStore(t, false, false)
 
 	t.Run("Testing Get Crag", func(t *testing.T) {
-		TestMock := &models.Crag{Id: 1}
-		log.Infof("Creating Test Mock %+v", TestMock)
 		Id := 1
 
-		_, err := MockStore.Stores.CragStore.GetCrag(Id)
+		data, err := MockStore.Stores.CragStore.GetCrag(Id)
 		if err != nil {
 			t.Fatalf("could not store crag because of err: %s", err)
+		}
+
+		testData := returnCrag()
+
+		assert.Equal(t, data.Name, testData.Name)
+		assert.Equal(t, data.Latitude, testData.Latitude)
+		assert.Equal(t, data.Longitude, testData.Longitude)
+
+	})
+
+	t.Run("Testing Invalid Crag Id", func(t *testing.T) {
+		Id := -99
+
+		_, err := MockStore.Stores.CragStore.GetCrag(Id)
+		if err == nil {
+			t.Fatal("store accepted invalid id")
 		}
 	})
 
 }
 
-// TODO NEEDS REDOING - THIS IS NOT HOW WE'RE HANDLING UPDATES
-// func TestUpdateCrag(t *testing.T) {
-// 	t.Logf("Creating pre populated Mock Store")
-// 	MockStore := returnPrePopulatedMockStore(t, false, false)
+func TestUpateCrag(t *testing.T) {
+	MockStore := returnPrePopulatedMockStore(t, false, false)
 
-// 	t.Run("Testing Update Crag", func(t *testing.T) {
+	t.Run("Update Crag", func(t *testing.T) {
 
-// 		crag := returnCrag()
-// 		crag.Name = "Milestone"
-// 		log.Infof("Crag name changed to %s", crag.Name)
+		crag := models.Crag{Id: 1, Name: "dank", Latitude: 1.1, Longitude: 2.2}
 
-// 		err := MockStore.Stores.CragStore.UpdateCragValue("Stanage", *crag)
-// 		if err != nil {
-// 			t.Fatalf("Update failed because of error: %s", err)
-// 		}
+		data, err := MockStore.Stores.CragStore.UpdateCrag(crag)
+		if err != nil {
+			t.Fatalf("failed storing crag: %s", err)
+		}
+		assert.Equal(t, crag.Name, data.Name)
 
-// 		log.Infof("getting crag to verify update")
-// 		currentCrag, err := MockStore.Stores.CragStore.GetCrag(1)
-// 		if err != nil {
-// 			t.Fatalf("Failed to get crag because of err: %s", err)
-// 		}
+	})
 
-// 		log.Infof("Crag name now %s, wanted: %s", currentCrag.Name, crag.Name)
-// 		if currentCrag.Name != "Milestone" {
-// 			t.Fatalf("The update name %s does not match %s", currentCrag.Name, crag.Name)
-// 		}
+	t.Run("Send Invalid Crag", func(t *testing.T) {
+		crag := models.Crag{}
 
-//		})
-//	}
+		_, err := MockStore.Stores.CragStore.UpdateCrag(crag)
+		if err == nil {
+			t.Fatalf("store accepted invalid crag")
+		}
+	})
+}
+
 func TestDeleteCrag(t *testing.T) {
 	MockStore := returnPrePopulatedMockStore(t, false, false)
 
@@ -134,9 +159,8 @@ func returnPrePopulatedMockStore(t *testing.T, climb bool, forecast bool) *SqlSt
 	//and then make a more obvious const for each climb, crag, weatherreport so its easier to test
 
 	store := CreateSqlStore(t)
-	log.Infof("CreatedStore %+v", store)
+
 	MockCrag := returnCrag()
-	log.Infof("Created MockCrag %+v", MockCrag)
 	_, err := store.Stores.CragStore.StoreCrag(MockCrag)
 	if err != nil {
 		t.Fatalf("Couldn't store crag because of this error: %s", err)

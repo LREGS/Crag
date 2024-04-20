@@ -8,6 +8,8 @@ import (
 
 //go:generate moq -out storess_test.go . CragStore
 
+//Storage layer for all the types. By the time the data has reached the store it will have already been validated **TODO**
+
 type Store interface {
 	initConnect(*StoreConfig)
 	GetMasterX() *sql.DB
@@ -15,14 +17,11 @@ type Store interface {
 }
 
 type CragStore interface {
-	//Do I not want to be returning the store instance so it can be checked whether the correct data was stored
-	//pls
 	StoreCrag(crag models.CragPayload) (models.Crag, error)
-	//reminder that im returning a copy of the crag and not a pointer for better type safety?! - should I be cause this has changed...
-	//pls go back to returing a copy and not pointer?
-	GetCrag(Id int) (*models.Crag, error)
-	UpdateCragValue(crag models.Crag) error
+	GetCrag(Id int) (models.Crag, error)
+	UpdateCrag(crag models.Crag) (models.Crag, error)
 	DeleteCragByID(Id int) error
+	Validate(models.CragPayload) error
 }
 
 type ClimbStore interface {

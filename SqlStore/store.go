@@ -59,3 +59,9 @@ func (ss *SqlStore) GetMasterX() *sql.DB {
 func (ss *SqlStore) GetCragStore() CragStore {
 	return ss.Stores.CragStore
 }
+
+func (ss *SqlStore) Insert(query string, params ...any) *sql.Row {
+
+	row := ss.masterX.QueryRow(query, params)
+	return row
+}

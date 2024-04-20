@@ -1,6 +1,8 @@
 package store
 
 import (
+	"errors"
+
 	"github.com/lregs/Crag/models"
 )
 
@@ -13,12 +15,18 @@ func NewCragStore(sqlStore *SqlStore) *SqlCragStore {
 	return CS
 }
 
+const storeCrag = `insert into crag(Name, Latitude, Longitude) values($1,$2,$3) RETURNING *`
+
 func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) {
-	query := `insert into crag(Name, Latitude, Longitude) values($1,$2,$3)`
 
 	var storedCrag models.Crag
 
-	err := cs.Store.masterX.QueryRow(query, crag.Name, crag.Latitude, crag.Longitude).Scan(storedCrag.Id, storedCrag.Latitude, storedCrag.Longitude, storedCrag.Name)
+	err := cs.Validate(crag)
+	if err != nil {
+		return storedCrag, err
+	}
+
+	err = cs.Store.masterX.QueryRow(storeCrag, crag.Name, crag.Latitude, crag.Longitude).Scan(&storedCrag.Id, &storedCrag.Name, &storedCrag.Latitude, &storedCrag.Longitude)
 	if err != nil {
 		return storedCrag, nil
 	}
@@ -27,32 +35,33 @@ func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) 
 
 }
 
-func (cs *SqlCragStore) GetCrag(Id int) (*models.Crag, error) {
-	c := &models.Crag{}
+const getCrag = `select Id, Name, Latitude, Longitude from crag where id = $1`
 
-	query := `select Id, Name, Latitude, Longitude from crag where id = $1`
+func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
+	var storedCrag models.Crag
 
-	err := cs.Store.masterX.QueryRow(query, Id).Scan(
-		&c.Id, &c.Name, &c.Latitude, &c.Longitude)
+	err := cs.Store.masterX.QueryRow(getCrag, Id).Scan(
+		&storedCrag.Id, &storedCrag.Name, &storedCrag.Latitude, &storedCrag.Longitude)
 
-	return c, err
+	if err != nil {
+		return storedCrag, err
+	}
+
+	return storedCrag, nil
 }
 
-func (cs *SqlCragStore) UpdateCragValue(crag models.Crag) error {
-	//I'd think there has to be a way to make a query builder so I can be selective about which
-	//field I want to update without having a set method for each field.
-	//maybe do this in the future
-	query := `
-	update crag set 
-	Name = $1, 
-	Latitude = $2,
-	Longitude = $3 
-	where Id = $4`
-	_, err := cs.Store.masterX.Exec(query, crag.Name, crag.Latitude, crag.Longitude, crag.Id)
+const updateCrag = `update crag set Name = $1, Latitude = $2, Longitude = $3 where Id = $4 RETURNING *`
+
+func (cs *SqlCragStore) UpdateCrag(crag models.Crag) (models.Crag, error) {
+
+	var updatedCrag models.Crag
+
+	err := cs.Store.masterX.QueryRow(updateCrag, crag.Name, crag.Latitude, crag.Longitude, crag.Id).Scan(&updatedCrag.Id, &updatedCrag.Name, &updatedCrag.Latitude, &updatedCrag.Longitude)
+
 	if err != nil {
-		return err
+		return updatedCrag, err
 	}
-	return nil
+	return updatedCrag, nil
 }
 
 func (cs *SqlCragStore) DeleteCragByID(Id int) error {
@@ -60,6 +69,20 @@ func (cs *SqlCragStore) DeleteCragByID(Id int) error {
 	_, err := cs.Store.masterX.Exec(query, Id)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (cs *SqlCragStore) Validate(payload models.CragPayload) error {
+	//niave validation
+	if payload.Name == "" {
+		return errors.New("cannot use empty name")
+	}
+	if payload.Latitude < -90 || payload.Latitude > 90 {
+		return errors.New("invalid latitude")
+	}
+	if payload.Longitude < -180 || payload.Longitude > 180 {
+		return errors.New("invalid longitude")
 	}
 	return nil
 }
