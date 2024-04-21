@@ -12,8 +12,8 @@ type SqlStore struct {
 type SqlStoreStores struct {
 	CragStore CragStore
 	//this should be the interface not a pointer to the concrete type but cba to change this second
-	ClimbStore    *SqlClimbStore
-	ForecastStore *SqlForecastStore
+	ClimbStore    ClimbStore
+	ForecastStore ForecastStore
 }
 
 type StoreConfig struct {
@@ -39,17 +39,6 @@ func (ss *SqlStore) initConnect(c *StoreConfig) {
 
 	ss.masterX = c.DbConnection
 
-	// DBURL, err := env.DBString()
-	// if err != nil {
-	// 	fmt.Printf("error establishing db connection %s", err)
-	// 	return err
-	// }
-
-	// ss.masterX, err = sql.Open("postgres", DBURL)
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 }
 
 func (ss *SqlStore) GetMasterX() *sql.DB {

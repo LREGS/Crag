@@ -2,23 +2,32 @@ package store
 
 import (
 	"testing"
-	"time"
 
 	"github.com/lregs/Crag/models"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestAddForecast(t *testing.T) {
+func TestStoreForecast(t *testing.T) {
 	//probably need more testing to make sure it saved correctly
 	MockStore := returnPrePopulatedMockStore(t, true, false)
-	forecast := newForecast()
+	forecast := testPayload()
 
-	t.Run("Testing Add Forecast", func(t *testing.T) {
-		_, err := MockStore.Stores.ForecastStore.AddForecast(forecast)
+	t.Run("Testing Store Forecast", func(t *testing.T) {
+		storedForecast, err := MockStore.Stores.ForecastStore.StoreForecast(forecast)
 
 		if err != nil {
 			t.Fatalf("post forecast request failed because of err: %s", err)
 		}
 
+		assert.Equal(t, testForecst(), storedForecast)
+
+	})
+
+	t.Run("testing invalid forecast", func(t *testing.T) {
+		_, err := MockStore.Stores.ForecastStore.StoreForecast(models.DBForecastPayload{})
+		if err == nil {
+			t.Fatal("stored empty values")
+		}
 	})
 
 }
@@ -68,9 +77,27 @@ func TestDeleteForecast(t *testing.T) {
 	})
 }
 
-func newForecast() models.DBForecastPayload {
+func testPayload() models.DBForecastPayload {
 	forecast := models.DBForecastPayload{
-		Time:                time.Now().Format(time.RFC3339),
+		Time:                "11",
+		ScreenTemperature:   25.0,
+		FeelsLikeTemp:       24.0,
+		WindSpeed:           10.0,
+		WindDirection:       180.0,
+		TotalPrecipAmount:   0.0,
+		ProbOfPrecipitation: 0.0,
+		Latitude:            51.5074,
+		Longitude:           -0.1278,
+		CragId:              1,
+	}
+
+	return forecast
+}
+
+func testForecst() models.DBForecast {
+	forecast := models.DBForecast{
+		Id:                  1,
+		Time:                "11",
 		ScreenTemperature:   25.0,
 		FeelsLikeTemp:       24.0,
 		WindSpeed:           10.0,

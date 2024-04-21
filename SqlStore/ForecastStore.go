@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"reflect"
 
 	"github.com/lregs/Crag/models"
 )
@@ -15,7 +16,7 @@ func NewForecastStore(sqlStore *SqlStore) *SqlForecastStore {
 	return store
 }
 
-const addForecast = `insert into forecast(	
+const storeForecast = `insert into forecast(	
 	Time, 
 	ScreenTemperature,
 	FeelsLikeTemp,
@@ -30,14 +31,17 @@ const addForecast = `insert into forecast(
 	$1,$2,$3,$4,$5,$6,$7,$8,$9,$10
 	) RETURNING *`
 
-func (fs *SqlForecastStore) AddForecast(forecast models.DBForecastPayload) (*models.DBForecast, error) {
+func (fs *SqlForecastStore) StoreForecast(forecast models.DBForecastPayload) (models.DBForecast, error) {
 
-	if forecast.Time == "" {
-		return nil, errors.New("no empty values allowed in forecast entry to db")
+	var storedForecast models.DBForecast
+
+	err := fs.validatePayload(forecast)
+	if err != nil {
+		return storedForecast, err
 	}
 
-	row := fs.Store.masterX.QueryRow(
-		addForecast,
+	err = fs.Store.masterX.QueryRow(
+		storeForecast,
 		forecast.Time,
 		forecast.ScreenTemperature,
 		forecast.FeelsLikeTemp,
@@ -47,23 +51,23 @@ func (fs *SqlForecastStore) AddForecast(forecast models.DBForecastPayload) (*mod
 		forecast.ProbOfPrecipitation,
 		forecast.Latitude,
 		forecast.Longitude,
-		forecast.CragId)
-
-	var storedForecast models.DBForecast
-	err := row.Scan(
+		forecast.CragId).Scan(
 		&storedForecast.Id,
-		&forecast.Time,
-		&forecast.ScreenTemperature,
-		&forecast.FeelsLikeTemp,
-		&forecast.WindSpeed,
-		&forecast.WindDirection,
-		&forecast.TotalPrecipAmount,
-		&forecast.ProbOfPrecipitation,
-		&forecast.Latitude,
-		&forecast.Longitude,
-		&forecast.CragId)
+		&storedForecast.Time,
+		&storedForecast.ScreenTemperature,
+		&storedForecast.FeelsLikeTemp,
+		&storedForecast.WindSpeed,
+		&storedForecast.WindDirection,
+		&storedForecast.TotalPrecipAmount,
+		&storedForecast.ProbOfPrecipitation,
+		&storedForecast.Latitude,
+		&storedForecast.Longitude,
+		&storedForecast.CragId)
+	if err != nil {
+		return storedForecast, err
+	}
 
-	return &storedForecast, err
+	return storedForecast, nil
 }
 
 const getForecastByCrag = `select * from forecast where CragId = $1`
@@ -150,6 +154,16 @@ func (fs *SqlForecastStore) DeleteForecastById(Id int) error {
 	return nil
 }
 
-func Validate(*models.DBForecast) error {
+func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error {
+	if reflect.DeepEqual(models.DBForecastPayload{}, data) {
+		return errors.New("input cannot be empty")
+	}
+	return nil
+}
+
+func (fs *SqlForecastStore) validateDBForecast(data models.DBForecast) error {
+	if reflect.DeepEqual(models.DBForecast{}, data) {
+		return errors.New("db value returned empty")
+	}
 	return nil
 }

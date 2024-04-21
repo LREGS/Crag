@@ -20,25 +20,22 @@ type CragStore interface {
 	StoreCrag(crag models.CragPayload) (models.Crag, error)
 	GetCrag(Id int) (models.Crag, error)
 	UpdateCrag(crag models.Crag) (models.Crag, error)
-	DeleteCragByID(Id int) error
-	Validate(models.CragPayload) error
+	DeleteCragByID(Id int) (models.Crag, error)
 }
 
 type ClimbStore interface {
-	StoreClimb(climb *models.Climb) (*models.Climb, error)
-	GetClimbsByCrag(CragId int) ([]*models.Climb, error)
-	GetAllClimbs() ([]*models.Climb, error)
-	GetClimbById(Id int) (*models.Climb, error)
-	UpdateClimb(climb *models.Climb) (*models.Climb, error)
-	DeleteClimb(Id int) error
-	Validate(climb *models.Climb) error
+	StoreClimb(climb models.ClimbPayload) (models.Climb, error)
+	GetClimbsByCragId(CragId int) ([]models.Climb, error)
+	GetAllClimbs() ([]models.Climb, error)
+	GetClimbById(Id int) (models.Climb, error)
+	UpdateClimb(climb models.Climb) (models.Climb, error)
+	DeleteClimb(Id int) (models.Climb, error)
 }
 
 type ForecastStore interface {
-	AddForecast(*models.DBForecastPayload) (models.DBForecast, error)
+	StoreForecast(models.DBForecastPayload) (models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
 	//im not sure we need this unles we want to seperate it into days in the store/with the query??
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) error
-	Validate(*models.DBForecast) error
 }

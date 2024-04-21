@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"reflect"
 
 	"github.com/lregs/Crag/models"
 )
@@ -64,16 +65,25 @@ func (cs *SqlCragStore) UpdateCrag(crag models.Crag) (models.Crag, error) {
 	return updatedCrag, nil
 }
 
-func (cs *SqlCragStore) DeleteCragByID(Id int) error {
-	query := `delete from crag where id = $1`
-	_, err := cs.Store.masterX.Exec(query, Id)
+const deleteCrag = `delete from crag where id = $1 RETURNING *`
+
+func (cs *SqlCragStore) DeleteCragByID(Id int) (models.Crag, error) {
+
+	var deletedCrag models.Crag
+
+	err := cs.Store.masterX.QueryRow(deleteCrag, Id).Scan(&deletedCrag.Id, &deletedCrag.Name, &deletedCrag.Latitude, &deletedCrag.Longitude)
 	if err != nil {
-		return err
+		return deletedCrag, err
 	}
-	return nil
+	return deletedCrag, nil
 }
 
 func (cs *SqlCragStore) Validate(payload models.CragPayload) error {
+
+	if reflect.DeepEqual(models.Crag{}, payload) {
+		return errors.New("payload is empty")
+	}
+
 	//niave validation
 	if payload.Name == "" {
 		return errors.New("cannot use empty name")

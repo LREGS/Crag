@@ -37,16 +37,16 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 			http.Error(w, "Wrong request method", http.StatusMethodNotAllowed)
 		}
 
-		payload := &models.DBForecastPayload{}
+		payload := models.DBForecastPayload{}
 
-		err := util.Decode(r, payload)
+		err := util.Decode(r, &payload)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed decoding payload %s", err), http.StatusInternalServerError)
 			return
 		}
 
 		//shouldnt this be a copy?!
-		res, err := h.store.AddForecast(payload)
+		res, err := h.store.StoreForecast(payload)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed storing payload  %s", err), http.StatusInternalServerError)
 			return

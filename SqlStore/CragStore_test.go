@@ -131,7 +131,7 @@ func TestDeleteCrag(t *testing.T) {
 	t.Run("Testing Delete Crag", func(t *testing.T) {
 		id := 1
 
-		err := MockStore.Stores.CragStore.DeleteCragByID(id)
+		_, err := MockStore.Stores.CragStore.DeleteCragByID(id)
 		if err != nil {
 			t.Fatalf("error deleting crag %s: ", err)
 		}
@@ -167,7 +167,7 @@ func returnPrePopulatedMockStore(t *testing.T, climb bool, forecast bool) *SqlSt
 	}
 
 	if climb != false {
-		MockClimb := returnClimb()
+		MockClimb := returnPayload()
 		_, err = store.Stores.ClimbStore.StoreClimb(MockClimb)
 		if err != nil {
 			t.Fatalf("could not store climb because of this error: %s", err)
@@ -175,8 +175,9 @@ func returnPrePopulatedMockStore(t *testing.T, climb bool, forecast bool) *SqlSt
 	}
 
 	if forecast != false {
-		MockForecast := newForecast()
-		_, err = store.Stores.ForecastStore.AddForecast(MockForecast)
+		//confusing names
+		MockForecast := testPayload()
+		_, err = store.Stores.ForecastStore.StoreForecast(MockForecast)
 		if err != nil {
 			t.Fatalf("could not store forecast because of error: %s", err)
 		}
