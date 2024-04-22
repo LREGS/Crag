@@ -35,7 +35,6 @@ type ClimbStore interface {
 type ForecastStore interface {
 	StoreForecast(models.DBForecastPayload) (models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
-	//im not sure we need this unles we want to seperate it into days in the store/with the query??
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) error
 }

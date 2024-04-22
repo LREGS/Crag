@@ -3,32 +3,35 @@ package util
 import (
 	"bytes"
 	"net/http"
+	"net/http/httptest"
 )
 
-func NewPostRequest(body []byte, url string) (*http.Request, error) {
+func NewPostRequest(body []byte, url string) (*httptest.ResponseRecorder, *http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	return req, nil
+	httptest.NewRecorder()
+
+	return httptest.NewRecorder(), req, nil
 
 }
 
-func NewGetRequest(url string) *http.Request {
+func NewGetRequest(url string) (*httptest.ResponseRecorder, *http.Request) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	return req
+	return httptest.NewRecorder(), req
 }
 
-func NewPutRequest(body []byte, url string) (*http.Request, error) {
+func NewPutRequest(body []byte, url string) (*httptest.ResponseRecorder, *http.Request, error) {
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	return req, nil
+	return httptest.NewRecorder(), req, nil
 }
