@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"regexp"
 	"testing"
@@ -74,14 +75,7 @@ func (s *MockClimbStore) StoreClimb(climb models.ClimbPayload) (models.Climb, er
 }
 
 func (s *MockClimbStore) GetClimbsByCragId(CragId int) ([]models.Climb, error) {
-	if CragId == 0 {
-		return nil, errors.New("No climbs")
-	}
-	res := []models.Climb{}
-	for _, crag := range s.climbs {
-		res = append(res, crag)
-	}
-	return res, nil
+	return []models.Climb{{Id: 1, Name: "Harvey Oswald", Grade: "7a+", CragID: 1}}, nil
 }
 
 // why are we not returning an error here?!
@@ -132,7 +126,7 @@ func TestPostClimb(t *testing.T) {
 	store := returnPopulatedStore()
 	handler := NewHandler(store)
 	router := mux.NewRouter()
-	router.PathPrefix("/climb").HandlerFunc(handler.handlePostClimb()).Methods("POST")
+	router.PathPrefix("/climb").HandlerFunc(handler.Post()).Methods("POST")
 
 	t.Run("Testing Valid Climb", func(t *testing.T) {
 		payload := returnTestPayload()
@@ -181,27 +175,58 @@ func TestPostClimb(t *testing.T) {
 }
 
 func TestGetById(t *testing.T) {
+
 	store := returnPopulatedStore()
 	handler := NewHandler(store)
 	router := mux.NewRouter()
-	router.PathPrefix("/climb/1").HandlerFunc(handler.handlePostClimb()).Methods("GET")
+	router.PathPrefix("/climbs/{cragId}").HandlerFunc(handler.GetByCragId()).Methods("GET")
 
 	t.Run("Testing Valid ID", func(t *testing.T) {
 
-		res, req := util.NewGetRequest("/climb/1")
-		router.ServeHTTP(res, req)
-
-		switch res.Code {
-		case 200:
-			return
-		case 400:
-			var responseData map[string]string
-			if err := json.NewDecoder(res.Body).Decode(&responseData); err != nil {
-				t.Fatalf("%d, %s", res.Code, res.Body.String())
-			}
+		res := httptest.NewRecorder()
+		request, err := http.NewRequest("GET", "/climbs/2", nil)
+		if err != nil {
+			t.Fatalf("failed creating request %s", err)
 		}
+		router.ServeHTTP(res, request)
 
 		assert.Equal(t, http.StatusOK, res.Code)
+
+		var data []models.Climb
+		if err := json.Unmarshal(res.Body.Bytes(), &data); err != nil {
+			t.Fatalf("unmarshal failed, %s", err)
+		}
+
+		assert.Equal(t, returnTestClimb(), data[0])
+
+	})
+
+	t.Run("Testing Invalid URL", func(t *testing.T) {
+
+		res := httptest.NewRecorder()
+		request, err := http.NewRequest("GET", "/climbs/a", nil)
+		if err != nil {
+			t.Fatalf("failed creating request %s", err)
+		}
+
+		router.ServeHTTP(res, request)
+
+		assert.Equal(t, http.StatusInternalServerError, res.Code)
+
+		var response map[string]string
+		if err := json.Unmarshal(res.Body.Bytes(), &response); err != nil {
+			t.Fatalf("decoding failed %s", err)
+		}
+		errorPattern := "^could\\ not\\ convert\\ key.*"
+
+		matched, err := regexp.MatchString(errorPattern, response["Error"])
+		if err != nil {
+			t.Fatalf("regex failed, %s", err)
+		}
+
+		if !matched {
+			t.Fatalf("res %s did not match regex", response["Error"])
+		}
 
 	})
 }
@@ -595,13 +620,13 @@ func returnPopulatedStore() *MockClimbStore {
 			1: models.Climb{
 				Id:     1,
 				Name:   "Harvey Oswald",
-				Grade:  "v2",
+				Grade:  "7a+",
 				CragID: 1,
 			},
 			2: models.Climb{
 				Id:     2,
 				Name:   "Slopers",
-				Grade:  "v5",
+				Grade:  "7a",
 				CragID: 1,
 			},
 		},
@@ -626,7 +651,7 @@ func returnTestClimb() models.Climb {
 	return models.Climb{
 		Id:     1,
 		Name:   "Harvey Oswald",
-		Grade:  "v2",
+		Grade:  "7a+",
 		CragID: 1,
 	}
 }

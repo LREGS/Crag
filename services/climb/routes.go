@@ -22,8 +22,8 @@ func NewHandler(store store.ClimbStore) *Handler {
 func (h *Handler) RegisterRoutes(r *mux.Router) {
 	//should recieve a subrouter /climb/X
 
-	r.HandleFunc("/", h.handlePostClimb()).Methods("POST")
-	r.HandleFunc("/climb/{cragID}", h.getByCragId()).Methods("GET")
+	r.HandleFunc("", h.Post()).Methods("POST")
+	r.HandleFunc("/crag/{cragId}", h.GetByCragId()).Methods("GET")
 	// r.HandleFunc("/all", h.HandleGetAllClimbs()).Methods("GET")
 	// r.HandleFunc("/{Id}", h.HandleGetClimbById()).Methods("GET")
 	// r.HandleFunc("/", h.HandleUpdateClimb()).Methods("PUT")
@@ -31,7 +31,7 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 
 }
 
-func (h *Handler) handlePostClimb() http.HandlerFunc {
+func (h *Handler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		climb := models.ClimbPayload{}
 
@@ -53,22 +53,25 @@ func (h *Handler) handlePostClimb() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) getByCragId() http.HandlerFunc {
+func (h *Handler) GetByCragId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		key, err := strconv.Atoi(vars["cragID"])
+		key, err := strconv.Atoi(vars["cragId"])
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not convert key to integer: %s", err))
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("could not convert key (%d) to integer: %s, URL is %v", key, err, r.URL))
+			return
 		}
 
 		res, err := h.store.GetClimbsByCragId(key)
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting crags %s", err))
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error getting crags %s", err))
+			return
 		}
 
 		err = util.Encode(w, http.StatusOK, res)
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error ecoding %s", err))
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error ecoding %s", err))
+			return
 		}
 
 	}
