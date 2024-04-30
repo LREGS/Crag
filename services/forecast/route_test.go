@@ -298,19 +298,18 @@ func TestAddForecast(t *testing.T) {
 
 	t.Run("Testing Empty Data", func(t *testing.T) {
 		payload := models.DBForecastPayload{}
-		response := httptest.NewRecorder()
 
 		b, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("cannot unmarshal, %s", err)
 		}
 
-		req, err := util.NewPostRequest(b, "/forecast")
+		res, req, err := util.NewPostRequest(b, "/forecast")
 		if err != nil {
 			t.Fatalf("cannot create request %s", err)
 		}
 
-		router.ServeHTTP(response, req)
+		router.ServeHTTP(res, req)
 
 	})
 }

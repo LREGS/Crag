@@ -33,8 +33,8 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 
 func (h *Handler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		climb := models.ClimbPayload{}
 
+		var climb models.Climb
 		if err := util.Decode(r, &climb); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(decodeError, err))
 		}
