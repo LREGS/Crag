@@ -20,14 +20,14 @@ func NewHandler(store store.ClimbStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	//should recieve a subrouter /climb/X
 
+	//subrouter of /climb
 	r.HandleFunc("", h.Post()).Methods("POST")
 	r.HandleFunc("/crag/{cragId}", h.GetByCragId()).Methods("GET")
-	// r.HandleFunc("/all", h.HandleGetAllClimbs()).Methods("GET")
-	// r.HandleFunc("/{Id}", h.HandleGetClimbById()).Methods("GET")
-	// r.HandleFunc("/", h.HandleUpdateClimb()).Methods("PUT")
-	// r.HandleFunc("/{Id}", h.HandleDeleteClimb()).Methods("DELETE")
+	r.HandleFunc("/all", h.GetAll()).Methods("GET")
+	r.HandleFunc("/{Id}", h.GetById()).Methods("GET")
+	r.HandleFunc("/", h.Update()).Methods("PUT")
+	r.HandleFunc("/{Id}", h.Delete()).Methods("DELETE")
 
 }
 
@@ -36,18 +36,17 @@ func (h *Handler) Post() http.HandlerFunc {
 		climb := models.ClimbPayload{}
 
 		if err := util.Decode(r, &climb); err != nil {
-			errString := fmt.Sprintf("error decoding request body: %s", err)
-			http.Error(w, errString, http.StatusBadRequest)
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(decodeError, err))
 		}
 
 		storedData, err := h.store.StoreClimb(climb)
 		if err != nil {
-			http.Error(w, "error storing climb", http.StatusBadRequest)
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
 		}
 
 		err = util.Encode(w, http.StatusCreated, storedData)
 		if err != nil {
-			http.Error(w, "error encoding response", http.StatusBadRequest)
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
 		}
 
 	}
@@ -58,97 +57,102 @@ func (h *Handler) GetByCragId() http.HandlerFunc {
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["cragId"])
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("could not convert key (%d) to integer: %s, URL is %v", key, err, r.URL))
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
 			return
 		}
 
 		res, err := h.store.GetClimbsByCragId(key)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error getting crags %s", err))
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
 			return
 		}
 
 		err = util.Encode(w, http.StatusOK, res)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error ecoding %s", err))
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
 			return
 		}
 
 	}
 }
 
-// func (h *Handler) HandleGetAllClimbs() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		//please check this error
-// 		res, _ := h.store.GetAllClimbs()
+func (h *Handler) GetAll() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		err := util.Encode(w, http.StatusOK, res)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error encoding %s", err))
-// 		}
+		res, err := h.store.GetAllClimbs()
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+		}
 
-// 		// w.WriteHeader(http.StatusOK)
-// 	}
+		if err = util.Encode(w, http.StatusOK, res); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+		}
+	}
 
-// }
+}
 
-// func (h *Handler) HandleGetClimbById() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		vars := mux.Vars(r)
-// 		key, err := strconv.Atoi(vars["Id"])
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting key becuase of error: %s", err))
-// 		}
-// 		res, err := h.store.GetClimbById(key)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not get climb because of err: %s", err))
-// 		}
+func (h *Handler) GetById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		err = util.Encode(w, http.StatusOK, res)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not encode because of error: %s", err))
-// 		}
-// 	}
-// }
+		vars := mux.Vars(r)
+		key, err := strconv.Atoi(vars["Id"])
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
+			return
+		}
 
-// func (h *Handler) HandleUpdateClimb() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := h.store.GetClimbById(key)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+		}
 
-// 		updatedClimb := &models.Climb{}
+		if err = util.Encode(w, http.StatusOK, res); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+		}
 
-// 		err := util.Decode(r, updatedClimb)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Coud not decode request because of err: %s", err))
-// 		}
+	}
+}
 
-// 		resData, err := h.store.UpdateClimb(updatedClimb)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Could not update climb because of err: %s", err))
-// 		}
+func (h *Handler) Update() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		err = util.Encode(w, http.StatusOK, resData)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Coud not encode request because of err: %s", err))
+		var updatedClimb models.Climb
+		err := util.Decode(r, &updatedClimb)
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(decodeError, err))
+		}
 
-// 		}
+		resData, err := h.store.UpdateClimb(updatedClimb)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+		}
 
-// 	}
-// }
+		err = util.Encode(w, http.StatusOK, resData)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
 
-// func (h *Handler) HandleDeleteClimb() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
+		}
 
-// 		vars := mux.Vars(r)
-// 		key, err := strconv.Atoi(vars["Id"])
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("could not get id from url"))
-// 		}
+	}
+}
 
-// 		err = h.store.DeleteClimb(key)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusBadRequest, fmt.Errorf("failed deleting climb: %s", err))
-// 		}
-// 		w.WriteHeader(http.StatusNoContent)
+func (h *Handler) Delete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 	}
-// }
+		vars := mux.Vars(r)
+		key, err := strconv.Atoi(vars["Id"])
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
+		}
+
+		res, err := h.store.DeleteClimb(key)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+		}
+
+		if err = util.Encode(w, http.StatusOK, res); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+		}
+
+	}
+}
