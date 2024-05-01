@@ -1,11 +1,12 @@
 package crag
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	store "github.com/lregs/Crag/SqlStore"
-	"github.com/lregs/Crag/models"
 	"github.com/lregs/Crag/util"
 )
 
@@ -18,59 +19,48 @@ func NewHandler(store store.CragStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *mux.Router) {
-	// "crags/..."
-	r.HandleFunc("/", h.handlePostCrag()).Methods("POST")
-	// r.PathPrefix("/{key}").HandlerFunc(h.handleGetCrag()).Methods("GET")
+	// "crags/...
+	// r.HandleFunc("/", h.Post()).Methods("POST")
+	r.PathPrefix("/{key}").HandlerFunc(h.GetById()).Methods("GET")
 	// r.PathPrefix("/{key}").HandlerFunc(h.handleDelCragById()).Methods("DELETE")
 	// r.PathPrefix("/{key}").HandlerFunc(h.handlePostCrag()).Methods("POST")
 }
 
-func (h *Handler) Post() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		var crag models.Crag
-
-		data, err := util.Decode(r, crag)
-		if err != nil {
-			http.Error(w, "error decoding request body", http.StatusBadRequest)
-		}
-
-		err = h.store.StoreCrag(crag)
-		if err != nil {
-			http.Error(w, "Could not store crag", http.StatusBadRequest)
-		}
-
-	}
-}
-
-// func (h *Handler) GetById() http.HandlerFunc {
+// func (h *Handler) Post() http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		vars := mux.Vars(r)
-// 		key := vars["key"]
+// 		var crag models.CragPayload
 
-// 		cragID, err := strconv.Atoi(key)
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			fmt.Printf("error converting key to integer: %s", err)
-// 			return
-// 		}
-// 		res, err := h.store.GetCrag(cragID)
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusNotFound)
-// 			fmt.Printf("problem getting crag because of error %s", err)
-// 			return
+// 		if err := util.Decode(r, &crag); err != nil {
+// 			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(decodeError, err))
 // 		}
 
-// 		err = encode(w, r, http.StatusOK, res)
+// 		stored, err := h.store.StoreCrag(crag)
 // 		if err != nil {
-// 			fmt.Printf("error encoding: %s", err)
-// 			w.WriteHeader(http.StatusNotFound)
-
+// 			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
 // 		}
 
 // 	}
 // }
+
+func (h *Handler) GetById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		cragID, err := strconv.Atoi(vars["key"])
+
+		res, err := h.store.GetCrag(cragID)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+		}
+
+		if err = util.Encode(w, http.StatusOK, res); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+
+		}
+
+	}
+}
 
 // func (h *Handler) DelById() http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
