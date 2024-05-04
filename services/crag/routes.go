@@ -1,12 +1,12 @@
 package crag
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	store "github.com/lregs/Crag/SqlStore"
+	"github.com/lregs/Crag/models"
 	"github.com/lregs/Crag/util"
 )
 
@@ -20,62 +20,76 @@ func NewHandler(store store.CragStore) *Handler {
 
 func (h *Handler) RegisterRoutes(r *mux.Router) {
 	// "crags/...
-	// r.HandleFunc("/", h.Post()).Methods("POST")
+	r.HandleFunc("/", h.Post()).Methods("POST")
 	r.PathPrefix("/{key}").HandlerFunc(h.GetById()).Methods("GET")
-	// r.PathPrefix("/{key}").HandlerFunc(h.handleDelCragById()).Methods("DELETE")
-	// r.PathPrefix("/{key}").HandlerFunc(h.handlePostCrag()).Methods("POST")
+	r.PathPrefix("/{key}").HandlerFunc(h.DeleteById()).Methods("DELETE")
 }
 
-// func (h *Handler) Post() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Post() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-// 		var crag models.CragPayload
+		var crag models.CragPayload
+		if err := util.Decode(r, &crag); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, decodeError, err)
+		}
 
-// 		if err := util.Decode(r, &crag); err != nil {
-// 			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(decodeError, err))
-// 		}
+		stored, err := h.store.StoreCrag(crag)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+		}
 
-// 		stored, err := h.store.StoreCrag(crag)
-// 		if err != nil {
-// 			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
-// 		}
+		if err := util.Encode(w, 200, stored); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+		}
 
-// 	}
-// }
+	}
+}
 
 func (h *Handler) GetById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
 		cragID, err := strconv.Atoi(vars["key"])
+		if err != nil {
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
+			return
+		}
 
 		res, err := h.store.GetCrag(cragID)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
+
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 
 		}
 
 	}
 }
 
-// func (h *Handler) DelById() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		vars := mux.Vars(r)
-// 		IdStr := vars["key"]
+func (h *Handler) DeleteById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
 
-// 		Id, err := strconv.Atoi(IdStr)
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 		}
+		Id, err := strconv.Atoi(vars["key"])
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, varsErorr, err)
+			return
+		}
 
-// 		err = h.store.DeleteCragByID(Id)
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 		}
+		data, err := h.store.DeleteCragByID(Id)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
+		}
 
-// 	}
-// }
+		if err := util.Encode(w, 200, data); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
+		}
+	}
+}

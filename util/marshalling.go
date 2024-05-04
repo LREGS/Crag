@@ -49,13 +49,10 @@ func DecodeResponse[T any](body *bytes.Buffer, v T) (T, error) {
 	return v, nil
 }
 
-// nake this take err string and err and just do the fmt.Errorf inside this function rather than in every function call
-// but maybe we start handling errors in other ways
 func WriteError(w http.ResponseWriter, status int, errStr string, err error) {
 	w.WriteHeader(status)
-
-	errRes := map[string]error{"Error": fmt.Errorf(errStr, err)}
-
+	errMsg := fmt.Errorf(errStr, err)
+	errRes := map[string]error{"Error": errMsg}
 	json.NewEncoder(w).Encode(errRes)
 }
 

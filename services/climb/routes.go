@@ -1,7 +1,6 @@
 package climb
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -36,17 +35,17 @@ func (h *Handler) Post() http.HandlerFunc {
 
 		var climb models.ClimbPayload
 		if err := util.Decode(r, &climb); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(decodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, decodeError, err)
 		}
 
 		storedData, err := h.store.StoreClimb(climb)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		err = util.Encode(w, http.StatusCreated, storedData)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 
 	}
@@ -57,19 +56,19 @@ func (h *Handler) GetByCragId() http.HandlerFunc {
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["cragId"])
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
 			return
 		}
 
 		res, err := h.store.GetClimbsByCragId(key)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
 		}
 
 		err = util.Encode(w, http.StatusOK, res)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 			return
 		}
 
@@ -81,11 +80,11 @@ func (h *Handler) GetAll() http.HandlerFunc {
 
 		res, err := h.store.GetAllClimbs()
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 	}
 
@@ -97,17 +96,17 @@ func (h *Handler) GetById() http.HandlerFunc {
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
 			return
 		}
 
 		res, err := h.store.GetClimbById(key)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 
 	}
@@ -119,17 +118,17 @@ func (h *Handler) Update() http.HandlerFunc {
 		var updatedClimb models.Climb
 		err := util.Decode(r, &updatedClimb)
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(decodeError, err))
+			util.WriteError(w, http.StatusBadRequest, decodeError, err)
 		}
 
 		resData, err := h.store.UpdateClimb(updatedClimb)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		err = util.Encode(w, http.StatusOK, resData)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 
 		}
 
@@ -142,16 +141,16 @@ func (h *Handler) Delete() http.HandlerFunc {
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
-			util.WriteError(w, http.StatusBadRequest, fmt.Errorf(varsErorr, err))
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
 		}
 
 		res, err := h.store.DeleteClimb(key)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(storeError, err))
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, fmt.Errorf(encodeError, err))
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 
 	}
