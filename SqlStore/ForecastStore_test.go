@@ -70,10 +70,13 @@ func TestDeleteForecast(t *testing.T) {
 	t.Run("Testing delete forecast", func(t *testing.T) {
 
 		const Id = 1
-		err := MockStore.Stores.ForecastStore.DeleteForecastById(Id)
+		deletedData, err := MockStore.Stores.ForecastStore.DeleteForecastById(Id)
 		if err != nil {
 			t.Fatalf("could not delete item becasue of err: %s", err)
 		}
+
+		assert.Equal(t, testForecst(), deletedData)
+
 	})
 }
 

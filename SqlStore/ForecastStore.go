@@ -143,15 +143,28 @@ func (fs *SqlForecastStore) GetAllForecastsByCragId() (map[int][]models.DBForeca
 	return results, nil
 }
 
-const deleteForecastById = `DELETE FROM forecast where Id = $1`
+const deleteForecastById = `DELETE FROM forecast where Id = $1 returning *`
 
 // I should be returning an instance of the deleted data
-func (fs *SqlForecastStore) DeleteForecastById(Id int) error {
-	_, err := fs.Store.masterX.Exec(deleteForecastById, Id)
-	if err != nil {
-		return err
+func (fs *SqlForecastStore) DeleteForecastById(Id int) (models.DBForecast, error) {
+
+	var forecast models.DBForecast
+	if err := fs.Store.masterX.QueryRow(deleteForecastById, Id).Scan(
+		&forecast.Id,
+		&forecast.Time,
+		&forecast.ScreenTemperature,
+		&forecast.FeelsLikeTemp,
+		&forecast.WindSpeed,
+		&forecast.WindDirection,
+		&forecast.TotalPrecipAmount,
+		&forecast.ProbOfPrecipitation,
+		&forecast.Latitude,
+		&forecast.Longitude,
+		&forecast.CragId); err != nil {
+		return models.DBForecast{}, err
 	}
-	return nil
+	//in this stage do we want to be validating here or does it go back through validation middleware I dont know?! Maybe middleware is only validating data from the client
+	return forecast, nil
 }
 
 func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error {
@@ -161,9 +174,9 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 	return nil
 }
 
-func (fs *SqlForecastStore) validateDBForecast(data models.DBForecast) error {
-	if reflect.DeepEqual(models.DBForecast{}, data) {
-		return errors.New("db value returned empty")
-	}
-	return nil
-}
+// func (fs *SqlForecastStore) validateDBForecast(data models.DBForecast) error {
+// 	if reflect.DeepEqual(models.DBForecast{}, data) {
+// 		return errors.New("db value returned empty")
+// 	}
+// 	return nil
+// }

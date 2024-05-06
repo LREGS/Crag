@@ -1,7 +1,6 @@
 package forecast
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,13 +22,13 @@ func NewHandler(store store.ForecastStore) *Handler {
 
 func (h *Handler) RegisterRoutes(r *mux.Router) {
 	// "/forecast"
-	r.HandleFunc("", h.handlePostForecast()).Methods("POST")
-	r.HandleFunc("/{Id}", h.handleGetForecastByCragId()).Methods("GET")
-	r.HandleFunc("/all", h.handleGetAllForecast()).Methods("GET")
-	r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
+	r.HandleFunc("", h.Post()).Methods("POST")
+	r.HandleFunc("/{Id}", h.GetByCragId()).Methods("GET")
+	r.HandleFunc("/all", h.GetAllForecasts()).Methods("GET")
+	// r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
 }
 
-func (h *Handler) handlePostForecast() http.HandlerFunc {
+func (h *Handler) Post() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -41,64 +40,56 @@ func (h *Handler) handlePostForecast() http.HandlerFunc {
 
 		err := util.Decode(r, &payload)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed decoding payload %s", err), http.StatusInternalServerError)
+			util.WriteError(w, http.StatusBadRequest, decodeError, err)
 			return
 		}
 
 		//shouldnt this be a copy?!
 		res, err := h.store.StoreForecast(payload)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed storing payload  %s", err), http.StatusInternalServerError)
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
 		}
 
-		//is this here to just pass the test because its been some days
-		if res.Id == 1 {
-			http.Error(w, "empty value returned from store", 500)
+		if err = util.Encode(w, http.StatusOK, &res); err != nil {
+			util.WriteError(w, http.StatusBadRequest, encodeError, err)
+			return
 		}
-
-		//why &??
-		err = util.Encode(w, http.StatusOK, &res)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("error encoding response: %s", err), http.StatusInternalServerError)
-		}
-
 	}
 }
 
-func (h *Handler) handleGetForecastByCragId() http.HandlerFunc {
+func (h *Handler) GetByCragId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
-			http.Error(w, "Could not get id from request", http.StatusBadRequest)
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
 		}
 
 		data, err := h.store.GetForecastByCragId(key)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Getting data failed: %s", err), http.StatusInternalServerError)
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
 		err = util.Encode(w, http.StatusOK, data)
 		if err != nil {
-			http.Error(w, "Could not encode responde", http.StatusInternalServerError)
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 
 	}
 }
 
-func (h *Handler) handleGetAllForecast() http.HandlerFunc {
+func (h *Handler) GetAllForecasts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		data, err := h.store.GetAllForecastsByCragId()
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Could not get forecast %s", err), http.StatusInternalServerError)
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
-		err = util.Encode(w, 200, data)
-		if err != nil {
-			http.Error(w, "Could not encode data", http.StatusInternalServerError)
+		if err = util.Encode(w, 200, data); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
 		}
 	}
 }
@@ -109,13 +100,16 @@ func (h *Handler) handleDeleteForecastById() http.HandlerFunc {
 		vars := mux.Vars(r)
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
-			http.Error(w, "Could not get id from request", http.StatusBadRequest)
+			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
 		}
 
-		if err := h.store.DeleteForecastById(key); err != nil {
-			http.Error(w, fmt.Sprintf("Could not delete err: %s", err), 500)
+		data, err := h.store.DeleteForecastById(key)
+		if err != nil {
+			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		if err := util.Encode(w, 200, data); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+		}
 	}
 }

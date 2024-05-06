@@ -36,5 +36,5 @@ type ForecastStore interface {
 	StoreForecast(models.DBForecastPayload) (models.DBForecast, error)
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
-	DeleteForecastById(Id int) error
+	DeleteForecastById(Id int) (models.DBForecast, error)
 }
