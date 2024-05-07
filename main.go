@@ -23,7 +23,6 @@ package main
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -53,39 +52,41 @@ func main() {
 	// 	log.Fatalf("could not start srv because of err: %s", err)
 	// }
 
-	returnD, err, body := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
+	returnD, err, _ := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
 	if err != nil {
 		fmt.Print(err)
 	}
 
-	jsons, err := json.Marshal(returnD.Features[0].Properties.TimeSeries)
-	if err != nil {
-		fmt.Printf("error encoding %s", err)
-	}
+	// jsons, err := json.Marshal(returnD.Features[0].Properties.TimeSeries)
+	// if err != nil {
+	// 	fmt.Printf("error encoding %s", err)
+	// }
 
-	txt, err := os.Create("txt.txt")
-	if err != nil {
-		return
-	}
+	// txt, err := os.Create("txt.txt")
+	// if err != nil {
+	// 	return
+	// }
 
-	file, err := os.Create("forecast.json")
+	file, err := os.Create("forecast.csv")
 	if err != nil {
 		return
 	}
 
 	defer file.Close()
-	_, _ = file.Write(jsons)
-	_, _ = txt.Write(body)
+	// _, _ = file.Write(jsons)
+	// _, _ = txt.Write(body)
 	// fmt.Print(db.Close())
 
 	f2slice := f2csv(returnD)
 
-	w := csv.NewWriter(os.Stdout)
+	w := csv.NewWriter(file)
 	w.WriteAll(f2slice)
 
 }
 
 func f2csv(f models.Forecast) [][]string {
+
+	// fmt.Println(f)
 
 	d := f.Features[0].Properties.TimeSeries
 
@@ -105,8 +106,8 @@ func f2csv(f models.Forecast) [][]string {
 			strconv.Itoa(d[i].WindDirectionFrom10m),
 			strconv.FormatFloat(d[i].TotalPrecipAmount, 'f', -1, 64),
 			strconv.Itoa(d[i].ProbOfPrecipitation),
-			strconv.FormatFloat(f.Features[0].Coordinates[0], 'f', -1, 64),
-			// strconv.FormatFloat(f.Features[0].Coordinates[1], 'f', -1, 64),
+			strconv.FormatFloat(f.Features[0].Geometry.Coordinates[0], 'f', -1, 64),
+			strconv.FormatFloat(f.Features[0].Geometry.Coordinates[1], 'f', -1, 64),
 		}
 	}
 
