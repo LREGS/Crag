@@ -174,9 +174,12 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 	return nil
 }
 
-// func (fs *SqlForecastStore) validateDBForecast(data models.DBForecast) error {
-// 	if reflect.DeepEqual(models.DBForecast{}, data) {
-// 		return errors.New("db value returned empty")
-// 	}
-// 	return nil
-// }
+//	func (fs *SqlForecastStore) validateDBForecast(data models.DBForecast) error {
+//		if reflect.DeepEqual(models.DBForecast{}, data) {
+//			return errors.New("db value returned empty")
+//		}
+//		return nil
+//	}
+func parse2csv(v any) error {
+	return nil
+}

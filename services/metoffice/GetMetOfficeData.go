@@ -13,7 +13,7 @@ import (
 //do I need to have a struct that has the methods or just the functions I dont know
 
 // returns the forecast for a crag based on its stored coords
-func GetForecast(coords []float64) (*models.Forecast, error) {
+func GetForecast(coords []float64) (models.Forecast, error, []byte) {
 	var forecast models.Forecast
 
 	client := http.Client{}
@@ -22,12 +22,12 @@ func GetForecast(coords []float64) (*models.Forecast, error) {
 
 	headers, err := getHeaders()
 	if err != nil {
-		return &forecast, err
+		return forecast, err, nil
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return &forecast, err
+		return forecast, err, nil
 	}
 
 	req.Header = http.Header{
@@ -38,22 +38,19 @@ func GetForecast(coords []float64) (*models.Forecast, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return &forecast, err
+		return forecast, err, nil
 
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return &forecast, err
+		return forecast, err, nil
+
 	}
-
-	fmt.Print(string(body))
-
-	// var ResponseData = make(map[string]interface{})
 
 	err = json.Unmarshal(body, &forecast)
 	if err != nil {
-		return &forecast, err
+		return forecast, err, nil
 	}
 
 	// defer res.Body.Close()
@@ -62,7 +59,7 @@ func GetForecast(coords []float64) (*models.Forecast, error) {
 	// 	return forecast, err
 	// }
 
-	return &forecast, nil
+	return forecast, nil, body
 
 }
 
