@@ -1,10 +1,15 @@
 package store
 
 import (
+	"encoding/csv"
 	"errors"
+	"log"
+	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/lregs/Crag/models"
+	met "github.com/lregs/Crag/services/metoffice"
 )
 
 type SqlForecastStore struct {
@@ -179,7 +184,88 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 //			return errors.New("db value returned empty")
 //		}
 //		return nil
-//	}
-func parse2csv(v any) error {
-	return nil
+
+const copyCSV = `COPY forecast FROM 'forecast.csv'`
+
+func (fs *SqlForecastStore) Populate(log *log.Logger) {
+
+	res, err := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
+	if err != nil {
+		log.Printf("error getting forecast, %s", err)
+	}
+
+	//create csv for copy
+	forecast2csv(log, res)
+
+	_, err = fs.Store.masterX.Exec(copyCSV)
+	if err != nil {
+		log.Printf("error copying to db %s", err)
+	}
+
+}
+
+const drop = `DROP TABLE forecast`
+
+const createTable = `CREATE TABLE forecast (
+    Id SERIAL PRIMARY KEY, 
+    Time VARCHAR(255) UNIQUE,
+    ScreenTemperature DOUBLE PRECISION,
+    FeelsLikeTemp DOUBLE PRECISION, 
+    WindSpeed DOUBLE PRECISION,
+    WindDirection DOUBLE PRECISION,
+    totalPrecipitation DOUBLE PRECISION,
+    ProbofPrecipitation INT,
+    Latitude DOUBLE PRECISION,
+    Longitude DOUBLE PRECISION
+);`
+
+func (fs *SqlForecastStore) Refresh(log *log.Logger) {
+
+	log.Print("Deleting data from forecast")
+	_, err := fs.Store.masterX.Exec(drop)
+	if err != nil {
+		log.Printf("failed dropping %s", err)
+	}
+
+	log.Print("Creating tables")
+	_, err = fs.Store.masterX.Exec(createTable)
+	if err != nil {
+		log.Printf("failed creating table %s", err)
+	}
+
+	fs.Populate(log)
+
+}
+
+func forecast2csv(log *log.Logger, f models.Forecast) {
+
+	// fmt.Println(f)
+
+	d := f.Features[0].Properties.TimeSeries
+
+	result := make([][]string, len(d))
+
+	//header
+	result[0] = []string{"Id", "Time", "ScreenTemperature", "FeelsLikeTemp", "WindSpeed",
+		"WindDirection", "totalPrecipitation", "ProbofPrecipitation", "Latitude", "Longitude"}
+
+	for i := 1; i < len(d); i++ {
+		result[i] = []string{
+			strconv.FormatFloat(d[i].FeelsLikeTemperature, 'f', -1, 64),
+			strconv.FormatFloat(d[i].WindSpeed10m, 'f', -1, 64),
+			strconv.Itoa(d[i].WindDirectionFrom10m),
+			strconv.FormatFloat(d[i].TotalPrecipAmount, 'f', -1, 64),
+			strconv.Itoa(d[i].ProbOfPrecipitation),
+			strconv.FormatFloat(f.Features[0].Geometry.Coordinates[0], 'f', -1, 64),
+			strconv.FormatFloat(f.Features[0].Geometry.Coordinates[1], 'f', -1, 64),
+		}
+	}
+
+	file, err := os.Create("forecast.csv")
+	if err != nil {
+		log.Printf("failed creating file %s", err)
+	}
+	w := csv.NewWriter(file)
+	w.WriteAll(result)
+
 }

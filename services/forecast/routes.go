@@ -44,7 +44,6 @@ func (h *Handler) Post() http.HandlerFunc {
 			return
 		}
 
-		//shouldnt this be a copy?!
 		res, err := h.store.StoreForecast(payload)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)

@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/lregs/Crag/models"
 )
@@ -37,4 +38,6 @@ type ForecastStore interface {
 	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
 	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
 	DeleteForecastById(Id int) (models.DBForecast, error)
+	Populate(log *log.Logger)
+	Refresh(log *log.Logger)
 }

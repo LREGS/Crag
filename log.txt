@@ -1,0 +1,7 @@
+[main]2024/05/08 21:52:26 main.go:44: dank
+[main]2024/05/08 21:52:26 ForecastStore.go:202: error copying to db dial tcp: lookup CragDb on 127.0.0.53:53: server misbehaving
+[main]2024/05/08 21:52:26 ForecastStore.go:224: Deleting data from forecast
+[main]2024/05/08 21:52:26 ForecastStore.go:227: failed dropping dial tcp: lookup CragDb on 127.0.0.53:53: server misbehaving
+[main]2024/05/08 21:52:26 ForecastStore.go:230: Creating tables
+[main]2024/05/08 21:52:26 ForecastStore.go:233: failed creating table dial tcp: lookup CragDb on 127.0.0.53:53: server misbehaving
+[main]2024/05/08 21:52:26 ForecastStore.go:202: error copying to db dial tcp: lookup CragDb on 127.0.0.53:53: server misbehaving
