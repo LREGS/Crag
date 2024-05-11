@@ -54,5 +54,7 @@ CREATE TABLE forecast (
     ProbofPrecipitation INT,
     Latitude DOUBLE PRECISION,
     Longitude DOUBLE PRECISION
-);
+)
+
+COPY forecast FROM 'forecast.csv' WITH (format csv, header);
 EOF

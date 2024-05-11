@@ -14,13 +14,12 @@ type Response struct {
 
 func Encode(w http.ResponseWriter, status int, v any) error {
 	//why have I commented out the better code?!
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	// if err := json.NewEncoder(w).Encode(v); err != nil {
-	// 	return fmt.Errorf("encode json: %w", err)
-	// }
-	// return nil
-	return json.NewEncoder(w).Encode(v)
+
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		return fmt.Errorf("encode json: %w", err)
+	}
+	return nil
+	// return json.NewEncoder(w).Encode(v)
 }
 
 func Decode(r *http.Request, v any) error {
@@ -50,20 +49,7 @@ func DecodeResponse[T any](body *bytes.Buffer, v T) (T, error) {
 }
 
 func WriteError(w http.ResponseWriter, status int, errStr string, err error) {
-	w.WriteHeader(status)
 	errMsg := fmt.Errorf(errStr, err)
 	errRes := map[string]error{"Error": errMsg}
 	json.NewEncoder(w).Encode(errRes)
-}
-
-func WriteResponse(w http.ResponseWriter, status int, data any, err string) {
-	response := &Response{
-		Data:  data,
-		Error: err,
-	}
-
-	w.Header().Set("Content Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(response)
-
 }

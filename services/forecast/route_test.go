@@ -3,6 +3,7 @@ package forecast
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,6 +20,12 @@ type MockForecastStore struct {
 
 func (fs *MockForecastStore) Validate(*models.DBForecast) error {
 	return nil
+}
+
+func (fs *MockForecastStore) Populate(*log.Logger) {
+}
+
+func (fs *MockForecastStore) Refresh(*log.Logger) {
 }
 
 func (fs *MockForecastStore) returnDBForecast(p *models.DBForecastPayload, Id int) models.DBForecast {

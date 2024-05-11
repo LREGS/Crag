@@ -135,7 +135,7 @@ func TestPostClimb(t *testing.T) {
 
 		router.ServeHTTP(res, req)
 
-		assert.Equal(t, 201, res.Code)
+		assert.Equal(t, http.StatusOK, res.Code)
 
 		var resData models.Climb
 

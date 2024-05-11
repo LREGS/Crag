@@ -24,11 +24,13 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 	store "github.com/lregs/Crag/SqlStore"
+	"github.com/lregs/Crag/server"
 )
 
 func main() {
@@ -37,11 +39,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer db.Close()
 
 	log := NewLogger("log.txt")
 
-	log.Println("dank")
+	if err := initdb(log, db); err != nil {
+		log.Panicf("Creating db failed %s", err)
+	}
+
 	store, err := store.NewSqlStore(&store.StoreConfig{DbConnection: db})
 	if err != nil {
 		log.Fatalf("Could not create store because of error: %s", err)
@@ -53,12 +59,12 @@ func main() {
 
 	store.Stores.ForecastStore.Refresh(log)
 
-	// srv := server.NewServer(store)
+	srv := server.NewServer(store)
 
-	// err = http.ListenAndServe(":6969", srv)
-	// if err != nil {
-	// 	log.Fatalf("could not start srv because of err: %s", err)
-	// }
+	err = http.ListenAndServe(":6969", srv)
+	if err != nil {
+		log.Fatalf("could not start srv because of err: %s", err)
+	}
 
 	// returnD, err, _ := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
 	// if err != nil {
@@ -129,4 +135,54 @@ func NewLogger(filename string) *log.Logger {
 		panic("bad file")
 	}
 	return log.New(logfile, "[main]", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
+var initDb = `DROP TABLE IF EXISTS forecast;
+DROP TABLE IF EXISTS report;
+DROP TABLE IF EXISTS climb;
+DROP TABLE IF EXISTS crag;
+
+-- Create tables
+CREATE TABLE crag (
+	Id SERIAL PRIMARY KEY, 
+	Name TEXT UNIQUE, 
+	Latitude DOUBLE PRECISION,
+	Longitude DOUBLE PRECISION
+);
+
+CREATE TABLE climb (
+	Id SERIAL PRIMARY KEY,
+	Name VARCHAR(255) UNIQUE,
+	Grade VARCHAR(255),
+	CragID INTEGER REFERENCES crag(Id)
+);
+
+CREATE TABLE report (
+	Id SERIAL PRIMARY KEY, 
+	Content VARCHAR(255),
+	Author VARCHAR(255),
+	CragID INTEGER REFERENCES crag(Id)
+);
+
+CREATE TABLE forecast (
+	Id SERIAL PRIMARY KEY, 
+	Time VARCHAR(255) UNIQUE,
+	ScreenTemperature DOUBLE PRECISION,
+	FeelsLikeTemp DOUBLE PRECISION, 
+	WindSpeed DOUBLE PRECISION,
+	WindDirection DOUBLE PRECISION,
+	totalPrecipitation DOUBLE PRECISION,
+	ProbofPrecipitation INT,
+	Latitude DOUBLE PRECISION,
+	Longitude DOUBLE PRECISION
+);`
+
+func initdb(log *log.Logger, db *sql.DB) error {
+	if _, err := db.Exec(initDb); err != nil {
+		log.Printf("init db failed %s", err)
+	}
+
+	log.Printf("db inited")
+	return nil
+
 }
