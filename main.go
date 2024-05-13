@@ -26,7 +26,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	_ "github.com/lib/pq"
 	store "github.com/lregs/Crag/SqlStore"
@@ -43,6 +42,7 @@ func main() {
 	defer db.Close()
 
 	log := NewLogger("log.txt")
+	log.Println("log created")
 
 	if err := initdb(log, db); err != nil {
 		log.Panicf("Creating db failed %s", err)
@@ -53,13 +53,13 @@ func main() {
 		log.Fatalf("Could not create store because of error: %s", err)
 	}
 
-	store.Stores.ForecastStore.Populate(log)
+	// store.Stores.ForecastStore.Populate(log)
 
-	time.NewTimer(20 * time.Second)
+	// time.NewTimer(20 * time.Second)
 
-	store.Stores.ForecastStore.Refresh(log)
+	// store.Stores.ForecastStore.Refresh(log)
 
-	srv := server.NewServer(store)
+	srv := server.NewServer(log, store)
 
 	err = http.ListenAndServe(":6969", srv)
 	if err != nil {

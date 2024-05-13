@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -10,7 +11,7 @@ import (
 	"github.com/lregs/Crag/services/forecast"
 )
 
-func NewServer(store *store.SqlStore) http.Handler {
+func NewServer(log *log.Logger, store *store.SqlStore) http.Handler {
 	mux := mux.NewRouter()
 	subrouter := mux.PathPrefix("/api/v1").Subrouter()
 	cragRouter := subrouter.PathPrefix("/crags").Subrouter()
@@ -20,7 +21,7 @@ func NewServer(store *store.SqlStore) http.Handler {
 	cragHandler := crag.NewHandler(store.Stores.CragStore)
 	cragHandler.RegisterRoutes(cragRouter)
 
-	climbHandler := climb.NewHandler(store.Stores.ClimbStore)
+	climbHandler := climb.NewHandler(log, store.Stores.ClimbStore)
 	climbHandler.RegisterRoutes(climbRouter)
 	// addRoutes(mux, store)
 

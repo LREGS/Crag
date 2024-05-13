@@ -25,7 +25,7 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("", h.Post()).Methods("POST")
 	r.HandleFunc("/{Id}", h.GetByCragId()).Methods("GET")
 	r.HandleFunc("/all", h.GetAllForecasts()).Methods("GET")
-	// r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
+	r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
 }
 
 func (h *Handler) Post() http.HandlerFunc {
@@ -34,6 +34,7 @@ func (h *Handler) Post() http.HandlerFunc {
 
 		if r.Method != "POST" {
 			http.Error(w, "Wrong request method", http.StatusMethodNotAllowed)
+			return
 		}
 
 		payload := models.DBForecastPayload{}
@@ -64,16 +65,19 @@ func (h *Handler) GetByCragId() http.HandlerFunc {
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
+			return
 		}
 
 		data, err := h.store.GetForecastByCragId(key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		err = util.Encode(w, http.StatusOK, data)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 
 	}
@@ -85,10 +89,12 @@ func (h *Handler) GetAllForecasts() http.HandlerFunc {
 		data, err := h.store.GetAllForecastsByCragId()
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err = util.Encode(w, 200, data); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 	}
 }
@@ -100,15 +106,18 @@ func (h *Handler) handleDeleteForecastById() http.HandlerFunc {
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
+			return
 		}
 
 		data, err := h.store.DeleteForecastById(key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err := util.Encode(w, 200, data); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 	}
 }

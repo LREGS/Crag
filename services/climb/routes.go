@@ -1,6 +1,7 @@
 package climb
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -11,17 +12,21 @@ import (
 )
 
 type Handler struct {
+	log   *log.Logger
 	store store.ClimbStore
 }
 
-func NewHandler(store store.ClimbStore) *Handler {
-	return &Handler{store: store}
+func NewHandler(log *log.Logger, store store.ClimbStore) *Handler {
+	return &Handler{
+		store: store,
+		log:   log,
+	}
 }
 
 func (h *Handler) RegisterRoutes(r *mux.Router) {
 
 	//subrouter of /climb
-	r.HandleFunc("", h.Post()).Methods("POST")
+	r.HandleFunc("", h.Post(h.log)).Methods("POST")
 	r.HandleFunc("/crag/{cragId}", h.GetByCragId()).Methods("GET")
 	r.HandleFunc("/all", h.GetAll()).Methods("GET")
 	r.HandleFunc("/{Id}", h.GetById()).Methods("GET")
@@ -30,24 +35,30 @@ func (h *Handler) RegisterRoutes(r *mux.Router) {
 
 }
 
-func (h *Handler) Post() http.HandlerFunc {
+func (h *Handler) Post(log *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var climb models.ClimbPayload
 		if err := util.Decode(r, &climb); err != nil {
-			util.WriteError(w, http.StatusInternalServerError, decodeError, err)
+			util.WriteError(w, http.StatusBadRequest, decodeError, err)
+			return
 		}
 
 		storedData, err := h.store.StoreClimb(climb)
 		if err != nil {
+			log.Printf("error message is %s", err.Error())
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			// http.Error(w, fmt.Sprintf("store err %s", err), http.StatusInternalServerError)
+			return
 		}
 
 		err = util.Encode(w, http.StatusCreated, storedData)
 		if err != nil {
-			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
-		}
+			log.Printf("error message is %s", err.Error())
 
+			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
+		}
 	}
 }
 
@@ -81,10 +92,12 @@ func (h *Handler) GetAll() http.HandlerFunc {
 		res, err := h.store.GetAllClimbs()
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 	}
 
@@ -103,10 +116,12 @@ func (h *Handler) GetById() http.HandlerFunc {
 		res, err := h.store.GetClimbById(key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 
 	}
@@ -119,16 +134,19 @@ func (h *Handler) Update() http.HandlerFunc {
 		err := util.Decode(r, &updatedClimb)
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, decodeError, err)
+			return
 		}
 
 		resData, err := h.store.UpdateClimb(updatedClimb)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		err = util.Encode(w, http.StatusOK, resData)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 
 		}
 
@@ -142,15 +160,18 @@ func (h *Handler) Delete() http.HandlerFunc {
 		key, err := strconv.Atoi(vars["Id"])
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, varsErorr, err)
+			return
 		}
 
 		res, err := h.store.DeleteClimb(key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err = util.Encode(w, http.StatusOK, res); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 
 	}

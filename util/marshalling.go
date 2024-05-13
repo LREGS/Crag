@@ -49,7 +49,7 @@ func DecodeResponse[T any](body *bytes.Buffer, v T) (T, error) {
 }
 
 func WriteError(w http.ResponseWriter, status int, errStr string, err error) {
-	errMsg := fmt.Errorf(errStr, err)
-	errRes := map[string]error{"Error": errMsg}
+	errMsg := fmt.Sprintf(errStr, err)
+	errRes := map[string]string{"Error": errMsg}
 	json.NewEncoder(w).Encode(errRes)
 }

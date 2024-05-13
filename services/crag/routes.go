@@ -31,15 +31,18 @@ func (h *Handler) Post() http.HandlerFunc {
 		var crag models.CragPayload
 		if err := util.Decode(r, &crag); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, decodeError, err)
+			return
 		}
 
 		stored, err := h.store.StoreCrag(crag)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
+			return
 		}
 
 		if err := util.Encode(w, 200, stored); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, encodeError, err)
+			return
 		}
 
 	}
