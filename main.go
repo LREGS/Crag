@@ -22,45 +22,43 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 	store "github.com/lregs/Crag/SqlStore"
 	"github.com/lregs/Crag/server"
 )
 
 func main() {
-	// Connect to the database
-	db, err := sql.Open("postgres", "host=CragDb user=postgres password=postgres dbname=postgres sslmode=disable")
+
+	conn, err := pgxpool.Connect(context.Background(), "postgres://postgres:postgres@CragDb:5432/postgres")
 	if err != nil {
 		panic(err)
 	}
 
-	defer db.Close()
+	// Connect to the database
+	// db, err := sql.Open("postgres", "host=CragDb user=postgres password=postgres dbname=postgres sslmode=disable")
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// defer db.Close()
 
 	log := NewLogger("log.txt")
 	log.Println("log created")
 
-	if err := initdb(log, db); err != nil {
+	if err := initdb(log, conn); err != nil {
 		log.Panicf("Creating db failed %s", err)
 	}
 
-	store, err := store.NewSqlStore(&store.StoreConfig{DbConnection: db})
+	store, err := store.NewSqlStore(&store.StoreConfig{DbConnection: conn})
 	if err != nil {
 		log.Fatalf("Could not create store because of error: %s", err)
 	}
-
-	file, _ := os.Open("f.csv")
-	defer file.Close()
-
-	con, err := db.Conn().CopyFrom()
-	if err != nil {
-		log.Fatal(err)
-	}
-	con = con.Close()
 
 	// store.Stores.ForecastStore.Populate(file, log)
 
@@ -68,7 +66,7 @@ func main() {
 
 	// store.Stores.ForecastStore.Refresh(log)
 
-	srv := server.NewServer(log, store)
+	srv := server.NewServer(context.Background(), log, store)
 
 	err = http.ListenAndServe(":6969", srv)
 	if err != nil {
@@ -131,8 +129,8 @@ CREATE TABLE forecast (
 	Longitude DOUBLE PRECISION
 );`
 
-func initdb(log *log.Logger, db *sql.DB) error {
-	if _, err := db.Exec(initDb); err != nil {
+func initdb(log *log.Logger, db *pgxpool.Pool) error {
+	if _, err := db.Exec(context.Background(), initDb); err != nil {
 		log.Printf("init db failed %s", err)
 	}
 

@@ -1,11 +1,11 @@
 package store
 
 import (
-	"database/sql"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type SqlStore struct {
-	masterX *sql.DB
+	masterX *pgxpool.Pool
 	Stores  SqlStoreStores
 }
 
@@ -17,7 +17,7 @@ type SqlStoreStores struct {
 }
 
 type StoreConfig struct {
-	DbConnection *sql.DB
+	DbConnection *pgxpool.Pool
 }
 
 func NewSqlStore(c *StoreConfig) (*SqlStore, error) {
@@ -41,16 +41,10 @@ func (ss *SqlStore) initConnect(c *StoreConfig) {
 
 }
 
-func (ss *SqlStore) GetMasterX() *sql.DB {
+func (ss *SqlStore) GetMasterX() *pgxpool.Pool {
 	return ss.masterX
 }
 
 func (ss *SqlStore) GetCragStore() CragStore {
 	return ss.Stores.CragStore
-}
-
-func (ss *SqlStore) Insert(query string, params ...any) *sql.Row {
-
-	row := ss.masterX.QueryRow(query, params)
-	return row
 }

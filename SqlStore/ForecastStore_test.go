@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"testing"
 
 	"github.com/lregs/Crag/models"
@@ -13,7 +14,7 @@ func TestStoreForecast(t *testing.T) {
 	forecast := testPayload()
 
 	t.Run("Testing Store Forecast", func(t *testing.T) {
-		storedForecast, err := MockStore.Stores.ForecastStore.StoreForecast(forecast)
+		storedForecast, err := MockStore.Stores.ForecastStore.StoreForecast(context.Background(), forecast)
 
 		if err != nil {
 			t.Fatalf("post forecast request failed because of err: %s", err)
@@ -24,7 +25,7 @@ func TestStoreForecast(t *testing.T) {
 	})
 
 	t.Run("testing invalid forecast", func(t *testing.T) {
-		_, err := MockStore.Stores.ForecastStore.StoreForecast(models.DBForecastPayload{})
+		_, err := MockStore.Stores.ForecastStore.StoreForecast(context.Background(), models.DBForecastPayload{})
 		if err == nil {
 			t.Fatal("stored empty values")
 		}
@@ -37,7 +38,7 @@ func TestGetForecastByCrag(t *testing.T) {
 
 	t.Run("Testing get by CragId", func(t *testing.T) {
 		const Id = 1
-		results, err := MockStore.Stores.ForecastStore.GetForecastByCragId(Id)
+		results, err := MockStore.Stores.ForecastStore.GetForecastByCragId(context.Background(), Id)
 		if err != nil {
 			t.Fatalf("Could not perform sql task because of this error: %s", err)
 		}
@@ -52,7 +53,7 @@ func TestGetAllForecasts(t *testing.T) {
 	MockStore := returnPrePopulatedMockStore(t, true, true)
 
 	t.Run("Testing get all forecasts", func(t *testing.T) {
-		results, err := MockStore.Stores.ForecastStore.GetAllForecastsByCragId()
+		results, err := MockStore.Stores.ForecastStore.GetAllForecastsByCragId(context.Background())
 		if err != nil {
 			t.Fatalf("could not get forecasts because of error: %s", err)
 		}
@@ -70,7 +71,7 @@ func TestDeleteForecast(t *testing.T) {
 	t.Run("Testing delete forecast", func(t *testing.T) {
 
 		const Id = 1
-		deletedData, err := MockStore.Stores.ForecastStore.DeleteForecastById(Id)
+		deletedData, err := MockStore.Stores.ForecastStore.DeleteForecastById(context.Background(), Id)
 		if err != nil {
 			t.Fatalf("could not delete item becasue of err: %s", err)
 		}

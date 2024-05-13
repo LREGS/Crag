@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"regexp"
@@ -19,14 +20,14 @@ func NewClimbStore(sqlStore *SqlStore) *SqlClimbStore {
 
 const StoreClimbQuery = `insert into climb(Name, Grade, CragID) VALUES($1,$2,$3)RETURNING *`
 
-func (cs *SqlClimbStore) StoreClimb(climb models.ClimbPayload) (models.Climb, error) {
+func (cs *SqlClimbStore) StoreClimb(ctx context.Context, climb models.ClimbPayload) (models.Climb, error) {
 	var storedClimb models.Climb
 
 	err := cs.validatePayload(climb)
 	if err != nil {
 		return storedClimb, err
 	}
-	err = cs.Store.masterX.QueryRow(StoreClimbQuery, climb.Name, climb.Grade, climb.CragID).Scan(&storedClimb.Id, &storedClimb.Name, &storedClimb.Grade, &storedClimb.CragID)
+	err = cs.Store.masterX.QueryRow(ctx, StoreClimbQuery, climb.Name, climb.Grade, climb.CragID).Scan(&storedClimb.Id, &storedClimb.Name, &storedClimb.Grade, &storedClimb.CragID)
 	if err != nil {
 		return storedClimb, err
 	}
@@ -35,9 +36,9 @@ func (cs *SqlClimbStore) StoreClimb(climb models.ClimbPayload) (models.Climb, er
 
 const GetClimbsAtCrag = `SELECT * FROM climb WHERE CragID = $1`
 
-func (cs *SqlClimbStore) GetClimbsByCragId(CragId int) ([]models.Climb, error) {
+func (cs *SqlClimbStore) GetClimbsByCragId(ctx context.Context, CragId int) ([]models.Climb, error) {
 	//returns all climbs by their associated crag
-	rows, err := cs.Store.masterX.Query(GetClimbsAtCrag, CragId)
+	rows, err := cs.Store.masterX.Query(ctx, GetClimbsAtCrag, CragId)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +61,11 @@ func (cs *SqlClimbStore) GetClimbsByCragId(CragId int) ([]models.Climb, error) {
 
 const getAllClimbs = `SELECT * FROM CLIMB ORDER BY name`
 
-func (cs *SqlClimbStore) GetAllClimbs() ([]models.Climb, error) {
+func (cs *SqlClimbStore) GetAllClimbs(ctx context.Context) ([]models.Climb, error) {
 
 	var results []models.Climb
 
-	rows, err := cs.Store.masterX.Query(getAllClimbs)
+	rows, err := cs.Store.masterX.Query(ctx, getAllClimbs)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +84,11 @@ func (cs *SqlClimbStore) GetAllClimbs() ([]models.Climb, error) {
 
 const getClimbById = `SELECT * FROM climb WHERE Id = $1`
 
-func (cs *SqlClimbStore) GetClimbById(Id int) (models.Climb, error) {
+func (cs *SqlClimbStore) GetClimbById(ctx context.Context, Id int) (models.Climb, error) {
 
 	var climb models.Climb
 
-	rows := cs.Store.masterX.QueryRow(getClimbById, Id)
+	rows := cs.Store.masterX.QueryRow(ctx, getClimbById, Id)
 
 	err := rows.Scan(&climb.Id, &climb.Name, &climb.Grade, &climb.CragID)
 	if err != nil {
@@ -101,7 +102,7 @@ func (cs *SqlClimbStore) GetClimbById(Id int) (models.Climb, error) {
 const updateClimb = `update climb set Name = $1, Grade = $2, CragID = $3 WHERE Id = $4
 RETURNING *`
 
-func (cs *SqlClimbStore) UpdateClimb(climb models.Climb) (models.Climb, error) {
+func (cs *SqlClimbStore) UpdateClimb(ctx context.Context, climb models.Climb) (models.Climb, error) {
 
 	var updatedClimb models.Climb
 
@@ -110,7 +111,7 @@ func (cs *SqlClimbStore) UpdateClimb(climb models.Climb) (models.Climb, error) {
 		return updatedClimb, err
 	}
 
-	err = cs.Store.masterX.QueryRow(updateClimb, &climb.Name, &climb.Grade, &climb.CragID, &climb.Id).Scan(&updatedClimb.Id, &updatedClimb.Name, &updatedClimb.Grade, &updatedClimb.CragID)
+	err = cs.Store.masterX.QueryRow(ctx, updateClimb, &climb.Name, &climb.Grade, &climb.CragID, &climb.Id).Scan(&updatedClimb.Id, &updatedClimb.Name, &updatedClimb.Grade, &updatedClimb.CragID)
 	if err != nil {
 		return updatedClimb, err
 	}
@@ -121,11 +122,11 @@ func (cs *SqlClimbStore) UpdateClimb(climb models.Climb) (models.Climb, error) {
 
 const deleteClimb = `DELETE FROM climb WHERE id = $1 RETURNING *`
 
-func (cs *SqlClimbStore) DeleteClimb(Id int) (models.Climb, error) {
+func (cs *SqlClimbStore) DeleteClimb(ctx context.Context, Id int) (models.Climb, error) {
 
 	var deletedClimb models.Climb
 
-	err := cs.Store.masterX.QueryRow(deleteClimb, Id).Scan(&deletedClimb.Id, &deletedClimb.Name, &deletedClimb.Grade, &deletedClimb.CragID)
+	err := cs.Store.masterX.QueryRow(ctx, deleteClimb, Id).Scan(&deletedClimb.Id, &deletedClimb.Name, &deletedClimb.Grade, &deletedClimb.CragID)
 	if err != nil {
 		return deletedClimb, err
 	}

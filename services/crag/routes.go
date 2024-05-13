@@ -1,6 +1,7 @@
 package crag
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -18,14 +19,14 @@ func NewHandler(store store.CragStore) *Handler {
 	return &Handler{store: store}
 }
 
-func (h *Handler) RegisterRoutes(r *mux.Router) {
+func (h *Handler) RegisterRoutes(ctx context.Context, r *mux.Router) {
 	// "crags/...
-	r.HandleFunc("/", h.Post()).Methods("POST")
-	r.PathPrefix("/{key}").HandlerFunc(h.GetById()).Methods("GET")
-	r.PathPrefix("/{key}").HandlerFunc(h.DeleteById()).Methods("DELETE")
+	r.HandleFunc("/", h.Post(ctx)).Methods("POST")
+	r.PathPrefix("/{key}").HandlerFunc(h.GetById(ctx)).Methods("GET")
+	r.PathPrefix("/{key}").HandlerFunc(h.DeleteById(ctx)).Methods("DELETE")
 }
 
-func (h *Handler) Post() http.HandlerFunc {
+func (h *Handler) Post(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var crag models.CragPayload
@@ -34,7 +35,7 @@ func (h *Handler) Post() http.HandlerFunc {
 			return
 		}
 
-		stored, err := h.store.StoreCrag(crag)
+		stored, err := h.store.StoreCrag(ctx, crag)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
@@ -48,7 +49,7 @@ func (h *Handler) Post() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) GetById() http.HandlerFunc {
+func (h *Handler) GetById(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
@@ -58,7 +59,7 @@ func (h *Handler) GetById() http.HandlerFunc {
 			return
 		}
 
-		res, err := h.store.GetCrag(cragID)
+		res, err := h.store.GetCrag(ctx, cragID)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
@@ -74,7 +75,7 @@ func (h *Handler) GetById() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) DeleteById() http.HandlerFunc {
+func (h *Handler) DeleteById(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -84,7 +85,7 @@ func (h *Handler) DeleteById() http.HandlerFunc {
 			return
 		}
 
-		data, err := h.store.DeleteCragByID(Id)
+		data, err := h.store.DeleteCragByID(ctx, Id)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return

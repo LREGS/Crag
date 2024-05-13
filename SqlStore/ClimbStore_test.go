@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"testing"
 
 	"github.com/lregs/Crag/models"
@@ -14,7 +15,7 @@ func TestStoreClimb(t *testing.T) {
 	//need to test if the return value is correct
 	t.Run("Testing Store Climb", func(t *testing.T) {
 		climb := returnPayload()
-		_, err := MockStore.Stores.ClimbStore.StoreClimb(climb)
+		_, err := MockStore.Stores.ClimbStore.StoreClimb(context.Background(), climb)
 		if err != nil {
 			t.Fatalf("failed because of error: %s", err)
 		}
@@ -22,7 +23,7 @@ func TestStoreClimb(t *testing.T) {
 
 	t.Run("Testing Empty Climb", func(t *testing.T) {
 		climb := models.ClimbPayload{}
-		_, err := MockStore.Stores.ClimbStore.StoreClimb(climb)
+		_, err := MockStore.Stores.ClimbStore.StoreClimb(context.Background(), climb)
 		if err == nil {
 			t.Fatal("stored empty result")
 		}
@@ -30,7 +31,7 @@ func TestStoreClimb(t *testing.T) {
 
 	t.Run("Testing hueco grade", func(t *testing.T) {
 		climb := models.ClimbPayload{Name: "tank", Grade: "v3", CragID: 1}
-		_, err := MockStore.Stores.ClimbStore.StoreClimb(climb)
+		_, err := MockStore.Stores.ClimbStore.StoreClimb(context.Background(), climb)
 		if err == nil {
 			t.Fatal("accepted incorrect grade")
 		}
@@ -44,7 +45,7 @@ func TestGetClimbsByCragId(t *testing.T) {
 	t.Run("Testing Get Climb By Crag Id", func(t *testing.T) {
 		CragId := 1
 
-		climbs, err := MockStore.Stores.ClimbStore.GetClimbsByCragId(CragId)
+		climbs, err := MockStore.Stores.ClimbStore.GetClimbsByCragId(context.Background(), CragId)
 		if err != nil {
 			t.Fatalf("store failedr: %s", err)
 		}
@@ -57,7 +58,7 @@ func TestGetAllClimbs(t *testing.T) {
 	MockStore := returnPrePopulatedMockStore(t, true, false)
 
 	t.Run("Testing GetAllClimbs", func(t *testing.T) {
-		climbs, err := MockStore.Stores.ClimbStore.GetAllClimbs()
+		climbs, err := MockStore.Stores.ClimbStore.GetAllClimbs(context.Background())
 		if err != nil {
 			t.Fatalf("could not get data from store because of err: %s", err)
 		}
@@ -74,7 +75,7 @@ func TestGetClimbById(t *testing.T) {
 
 		testClimb := returnClimb()
 
-		returnedClimb, err := MockStore.Stores.ClimbStore.GetClimbById(1)
+		returnedClimb, err := MockStore.Stores.ClimbStore.GetClimbById(context.Background(), 1)
 		if err != nil {
 			t.Fatalf("Could not Get climb by Id becuase of error: %s", err)
 		}
@@ -91,7 +92,7 @@ func TestUpdateClimb(t *testing.T) {
 		testClimb := returnClimb()
 		testClimb.Grade = "9a"
 
-		updatedClimb, err := MockStore.Stores.ClimbStore.UpdateClimb(testClimb)
+		updatedClimb, err := MockStore.Stores.ClimbStore.UpdateClimb(context.Background(), testClimb)
 		if err != nil {
 			t.Fatalf("Could not update climb because of err: %s", err)
 		}
@@ -100,7 +101,7 @@ func TestUpdateClimb(t *testing.T) {
 	})
 
 	t.Run("Testing Empty Climb", func(t *testing.T) {
-		_, err := MockStore.Stores.ClimbStore.UpdateClimb(models.Climb{})
+		_, err := MockStore.Stores.ClimbStore.UpdateClimb(context.Background(), models.Climb{})
 		if err == nil {
 			t.Fatal("shouldn't accept empty climb")
 		}
@@ -112,14 +113,14 @@ func TestDeleteClimb(t *testing.T) {
 
 	t.Run("Testing Delete Climb", func(t *testing.T) {
 
-		deletedClimb, err := MockStore.Stores.ClimbStore.DeleteClimb(1)
+		deletedClimb, err := MockStore.Stores.ClimbStore.DeleteClimb(context.Background(), 1)
 		if err != nil {
 			t.Fatalf("could not delete climb because of this error: %s", err)
 		}
 
 		assert.Equal(t, returnClimb(), deletedClimb)
 
-		_, err = MockStore.Stores.ClimbStore.GetClimbById(1)
+		_, err = MockStore.Stores.ClimbStore.GetClimbById(context.Background(), 1)
 		if err == nil {
 			t.Fatalf("Climb still exists in db")
 		}

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"errors"
 	"reflect"
 
@@ -18,7 +19,7 @@ func NewCragStore(sqlStore *SqlStore) *SqlCragStore {
 
 const storeCrag = `insert into crag(Name, Latitude, Longitude) values($1,$2,$3) RETURNING *`
 
-func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) {
+func (cs *SqlCragStore) StoreCrag(ctx context.Context, crag models.CragPayload) (models.Crag, error) {
 
 	var storedCrag models.Crag
 
@@ -27,9 +28,9 @@ func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) 
 		return storedCrag, err
 	}
 
-	err = cs.Store.masterX.QueryRow(storeCrag, crag.Name, crag.Latitude, crag.Longitude).Scan(&storedCrag.Id, &storedCrag.Name, &storedCrag.Latitude, &storedCrag.Longitude)
+	err = cs.Store.masterX.QueryRow(ctx, storeCrag, crag.Name, crag.Latitude, crag.Longitude).Scan(&storedCrag.Id, &storedCrag.Name, &storedCrag.Latitude, &storedCrag.Longitude)
 	if err != nil {
-		return storedCrag, nil
+		return storedCrag, err
 	}
 
 	return storedCrag, nil
@@ -38,10 +39,10 @@ func (cs *SqlCragStore) StoreCrag(crag models.CragPayload) (models.Crag, error) 
 
 const getCrag = `select Id, Name, Latitude, Longitude from crag where id = $1`
 
-func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
+func (cs *SqlCragStore) GetCrag(ctx context.Context, Id int) (models.Crag, error) {
 	var storedCrag models.Crag
 
-	err := cs.Store.masterX.QueryRow(getCrag, Id).Scan(
+	err := cs.Store.masterX.QueryRow(ctx, getCrag, Id).Scan(
 		&storedCrag.Id, &storedCrag.Name, &storedCrag.Latitude, &storedCrag.Longitude)
 
 	if err != nil {
@@ -53,11 +54,11 @@ func (cs *SqlCragStore) GetCrag(Id int) (models.Crag, error) {
 
 const updateCrag = `update crag set Name = $1, Latitude = $2, Longitude = $3 where Id = $4 RETURNING *`
 
-func (cs *SqlCragStore) UpdateCrag(crag models.Crag) (models.Crag, error) {
+func (cs *SqlCragStore) UpdateCrag(ctx context.Context, crag models.Crag) (models.Crag, error) {
 
 	var updatedCrag models.Crag
 
-	err := cs.Store.masterX.QueryRow(updateCrag, crag.Name, crag.Latitude, crag.Longitude, crag.Id).Scan(&updatedCrag.Id, &updatedCrag.Name, &updatedCrag.Latitude, &updatedCrag.Longitude)
+	err := cs.Store.masterX.QueryRow(ctx, updateCrag, crag.Name, crag.Latitude, crag.Longitude, crag.Id).Scan(&updatedCrag.Id, &updatedCrag.Name, &updatedCrag.Latitude, &updatedCrag.Longitude)
 
 	if err != nil {
 		return updatedCrag, err
@@ -67,11 +68,11 @@ func (cs *SqlCragStore) UpdateCrag(crag models.Crag) (models.Crag, error) {
 
 const deleteCrag = `delete from crag where id = $1 RETURNING *`
 
-func (cs *SqlCragStore) DeleteCragByID(Id int) (models.Crag, error) {
+func (cs *SqlCragStore) DeleteCragByID(ctx context.Context, Id int) (models.Crag, error) {
 
 	var deletedCrag models.Crag
 
-	err := cs.Store.masterX.QueryRow(deleteCrag, Id).Scan(&deletedCrag.Id, &deletedCrag.Name, &deletedCrag.Latitude, &deletedCrag.Longitude)
+	err := cs.Store.masterX.QueryRow(ctx, deleteCrag, Id).Scan(&deletedCrag.Id, &deletedCrag.Name, &deletedCrag.Latitude, &deletedCrag.Longitude)
 	if err != nil {
 		return deletedCrag, err
 	}

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -18,26 +19,26 @@ type Store interface {
 }
 
 type CragStore interface {
-	StoreCrag(crag models.CragPayload) (models.Crag, error)
-	GetCrag(Id int) (models.Crag, error)
-	UpdateCrag(crag models.Crag) (models.Crag, error)
-	DeleteCragByID(Id int) (models.Crag, error)
+	StoreCrag(ctx context.Context, crag models.CragPayload) (models.Crag, error)
+	GetCrag(ctx context.Context, Id int) (models.Crag, error)
+	UpdateCrag(ctx context.Context, crag models.Crag) (models.Crag, error)
+	DeleteCragByID(ctx context.Context, Id int) (models.Crag, error)
 }
 
 type ClimbStore interface {
-	StoreClimb(climb models.ClimbPayload) (models.Climb, error)
-	GetClimbsByCragId(CragId int) ([]models.Climb, error)
-	GetAllClimbs() ([]models.Climb, error)
-	GetClimbById(Id int) (models.Climb, error)
-	UpdateClimb(climb models.Climb) (models.Climb, error)
-	DeleteClimb(Id int) (models.Climb, error)
+	StoreClimb(ctx context.Context, climb models.ClimbPayload) (models.Climb, error)
+	GetClimbsByCragId(ctx context.Context, CragId int) ([]models.Climb, error)
+	GetAllClimbs(ctx context.Context) ([]models.Climb, error)
+	GetClimbById(ctx context.Context, Id int) (models.Climb, error)
+	UpdateClimb(ctx context.Context, climb models.Climb) (models.Climb, error)
+	DeleteClimb(ctx context.Context, Id int) (models.Climb, error)
 }
 
 type ForecastStore interface {
-	StoreForecast(models.DBForecastPayload) (models.DBForecast, error)
-	GetForecastByCragId(CragId int) ([]models.DBForecast, error)
-	GetAllForecastsByCragId() (map[int][]models.DBForecast, error)
-	DeleteForecastById(Id int) (models.DBForecast, error)
-	Populate(log *log.Logger)
-	Refresh(log *log.Logger)
+	StoreForecast(ctx context.Context, res models.DBForecastPayload) (models.DBForecast, error)
+	GetForecastByCragId(ctx context.Context, CragId int) ([]models.DBForecast, error)
+	GetAllForecastsByCragId(ctx context.Context) (map[int][]models.DBForecast, error)
+	DeleteForecastById(ctx context.Context, Id int) (models.DBForecast, error)
+	Populate(ctx context.Context, log *log.Logger)
+	Refresh(ctx context.Context, log *log.Logger)
 }

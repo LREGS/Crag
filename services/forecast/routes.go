@@ -1,6 +1,7 @@
 package forecast
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -20,15 +21,15 @@ func NewHandler(store store.ForecastStore) *Handler {
 	}
 }
 
-func (h *Handler) RegisterRoutes(r *mux.Router) {
+func (h *Handler) RegisterRoutes(ctx context.Context, r *mux.Router) {
 	// "/forecast"
-	r.HandleFunc("", h.Post()).Methods("POST")
-	r.HandleFunc("/{Id}", h.GetByCragId()).Methods("GET")
-	r.HandleFunc("/all", h.GetAllForecasts()).Methods("GET")
-	r.HandleFunc("/{Id}", h.handleDeleteForecastById()).Methods("DELETE")
+	r.HandleFunc("", h.Post(ctx)).Methods("POST")
+	r.HandleFunc("/{Id}", h.GetByCragId(ctx)).Methods("GET")
+	r.HandleFunc("/all", h.GetAllForecasts(ctx)).Methods("GET")
+	r.HandleFunc("/{Id}", h.handleDeleteForecastById(ctx)).Methods("DELETE")
 }
 
-func (h *Handler) Post() http.HandlerFunc {
+func (h *Handler) Post(ctx context.Context) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -45,7 +46,7 @@ func (h *Handler) Post() http.HandlerFunc {
 			return
 		}
 
-		res, err := h.store.StoreForecast(payload)
+		res, err := h.store.StoreForecast(ctx, payload)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
@@ -58,7 +59,7 @@ func (h *Handler) Post() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) GetByCragId() http.HandlerFunc {
+func (h *Handler) GetByCragId(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
@@ -68,7 +69,7 @@ func (h *Handler) GetByCragId() http.HandlerFunc {
 			return
 		}
 
-		data, err := h.store.GetForecastByCragId(key)
+		data, err := h.store.GetForecastByCragId(ctx, key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
@@ -83,10 +84,10 @@ func (h *Handler) GetByCragId() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) GetAllForecasts() http.HandlerFunc {
+func (h *Handler) GetAllForecasts(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		data, err := h.store.GetAllForecastsByCragId()
+		data, err := h.store.GetAllForecastsByCragId(ctx)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
@@ -99,7 +100,7 @@ func (h *Handler) GetAllForecasts() http.HandlerFunc {
 	}
 }
 
-func (h *Handler) handleDeleteForecastById() http.HandlerFunc {
+func (h *Handler) handleDeleteForecastById(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
@@ -109,7 +110,7 @@ func (h *Handler) handleDeleteForecastById() http.HandlerFunc {
 			return
 		}
 
-		data, err := h.store.DeleteForecastById(key)
+		data, err := h.store.DeleteForecastById(ctx, key)
 		if err != nil {
 			util.WriteError(w, http.StatusInternalServerError, storeError, err)
 			return
