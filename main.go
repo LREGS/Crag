@@ -52,7 +52,7 @@ func main() {
 	log.Println("log created")
 
 	if err := initdb(log, conn); err != nil {
-		log.Panicf("Creating db failed %s", err)
+		panic(err)
 	}
 
 	store, err := store.NewSqlStore(&store.StoreConfig{DbConnection: conn})

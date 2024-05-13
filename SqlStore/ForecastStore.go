@@ -6,7 +6,9 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/lregs/Crag/models"
+	met "github.com/lregs/Crag/services/metoffice"
 )
 
 type SqlForecastStore struct {
@@ -187,10 +189,26 @@ const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER'`
 
 func (fs *SqlForecastStore) Populate(ctx context.Context, log *log.Logger) {
 
-	// res, err := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
-	// if err != nil {
-	// 	log.Printf("error getting forecast, %s", err)
-	// }
+	res, err := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
+	if err != nil {
+		log.Printf("error getting forecast, %s", err)
+	}
+
+	count, err := fs.Store.masterX.CopyFrom(
+		ctx,
+		pgx.Identifier{"forecast"},
+		[]string{
+			"Id",
+			"Time",
+			"ScreenTemperature",
+			"FeelsLikeTemp",
+			"WindSpeed",
+			"WindDirection",
+			"totalPrecipitation",
+			"ProbofPrecipitation",
+			"Latitude",
+			"Longitude"},
+	)
 
 	// //create csv for copy
 	// file := forecast2csv(log, res)
