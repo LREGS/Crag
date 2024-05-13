@@ -185,7 +185,7 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 //		}
 //		return nil
 
-const copyCSV = `COPY forecast FROM 'forecast.csv'`
+const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER'`
 
 func (fs *SqlForecastStore) Populate(log *log.Logger) {
 
@@ -237,7 +237,7 @@ func (fs *SqlForecastStore) Refresh(log *log.Logger) {
 
 }
 
-func forecast2csv(log *log.Logger, f models.Forecast) {
+func forecast2csv(log *log.Logger, f models.Forecast) *os.File {
 
 	// fmt.Println(f)
 
@@ -267,5 +267,7 @@ func forecast2csv(log *log.Logger, f models.Forecast) {
 	}
 	w := csv.NewWriter(file)
 	w.WriteAll(result)
+
+	return file
 
 }
