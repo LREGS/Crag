@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/lregs/Crag/models"
-	"github.com/lregs/Crag/util"
 )
 
 //do I need to have a struct that has the methods or just the functions I dont know
@@ -18,7 +18,7 @@ func GetForecast(coords []float64) (models.Forecast, error) {
 
 	client := http.Client{}
 
-	url := fmt.Sprintf("https://api-metoffice.apiconnect.ibmcloud.com/v0/forecasts/point/hourly?latitude=%f&longitude=%f", coords[0], coords[1])
+	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude=%f&longitude=%f", coords[0], coords[1])
 
 	headers, err := getHeaders()
 	if err != nil {
@@ -31,15 +31,21 @@ func GetForecast(coords []float64) (models.Forecast, error) {
 	}
 
 	req.Header = http.Header{
-		"X-IBM-Client-Id":     {headers.ClientId},
-		"X-IBM-Client-Secret": {headers.ClientSecret},
-		"accept":              {headers.Accept},
+
+		KEY PLEASE 
+		"accept": {headers.Accept},
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
 		return forecast, err
 
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return forecast, fmt.Errorf("code %d", res.StatusCode)
 	}
 
 	body, err := io.ReadAll(res.Body)
@@ -70,10 +76,42 @@ type metOfficeHeaders struct {
 }
 
 func getHeaders() (metOfficeHeaders, error) {
-	env, err := util.GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
+	// env, err := util.GetEnv([]string{"CLIENT_ID", "CLIENT_SECRET"})
+	// if err != nil {
+	// 	return metOfficeHeaders{}, nil
+	// }
+
+	return metOfficeHeaders{ClientId: "e281f46e4980a322a84ed4592e2ae920", ClientSecret: "3a66408a791e46b7e6762b4370713072", Accept: "application/json"}, nil
+}
+
+func GetPayload(log *log.Logger, coords []float64) [][]interface{} {
+
+	forecast, err := GetForecast(coords)
 	if err != nil {
-		return metOfficeHeaders{}, nil
+		log.Println(err)
 	}
 
-	return metOfficeHeaders{ClientId: env[0], ClientSecret: env[1], Accept: "application/json"}, nil
+	timeSeries := forecast.Features[0].Properties.TimeSeries
+
+	payload := make([][]interface{}, len(timeSeries))
+
+	for i := 0; i < len(timeSeries); i++ {
+
+		payload[i] = []interface{}{
+			i + 1, //Id
+			timeSeries[i].Time,
+			timeSeries[i].ScreenTemperature,
+			timeSeries[i].FeelsLikeTemperature,
+			timeSeries[i].WindSpeed10m,
+			timeSeries[i].WindDirectionFrom10m,
+			timeSeries[i].TotalPrecipAmount,
+			timeSeries[i].ProbOfPrecipitation,
+			forecast.Features[0].Geometry.Coordinates[0],
+			forecast.Features[0].Geometry.Coordinates[1],
+		}
+
+	}
+
+	return payload
+
 }

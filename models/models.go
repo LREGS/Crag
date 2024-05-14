@@ -99,9 +99,9 @@ type DBForecastPayload struct {
 	ScreenTemperature   float64 `json:"screenTemperature"`
 	FeelsLikeTemp       float64 `json:"feelsLikeTemp"`
 	WindSpeed           float64 `json:"windSpeed"`
-	WindDirection       float64 `json:"windDirection"`
+	WindDirection       int     `json:"windDirection"`
 	TotalPrecipAmount   float64 `json:"totalPrecipAmount"`
-	ProbOfPrecipitation float64 `json:"probOfPrecipitation"`
+	ProbOfPrecipitation int     `json:"probOfPrecipitation"`
 	Latitude            float64 `json:"latitude"`
 	Longitude           float64 `json:"longitude"`
 	CragId              int     `json:"cragId"`

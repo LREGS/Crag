@@ -185,47 +185,38 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 //		}
 //		return nil
 
-const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER'`
+const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER`
 
 func (fs *SqlForecastStore) Populate(ctx context.Context, log *log.Logger) {
 
-	res, err := met.GetForecast([]float64{53.12000233374393, -4.000659549362343})
-	if err != nil {
-		log.Printf("error getting forecast, %s", err)
-	}
+	payload := met.GetPayload(log, []float64{53.12000233374393, -4.000659549362343})
 
-	count, err := fs.Store.masterX.CopyFrom(
+	_, err := fs.Store.masterX.CopyFrom(
 		ctx,
 		pgx.Identifier{"forecast"},
 		[]string{
-			"Id",
-			"Time",
-			"ScreenTemperature",
-			"FeelsLikeTemp",
-			"WindSpeed",
-			"WindDirection",
-			"totalPrecipitation",
-			"ProbofPrecipitation",
-			"Latitude",
-			"Longitude"},
+			"id",
+			"time",
+			"screentemperature",
+			"feelsliketemp",
+			"windspeed",
+			"winddirection",
+			"totalprecipitation",
+			"probofprecipitation",
+			"latitude",
+			"longitude"},
+		pgx.CopyFromRows(payload),
 	)
-
-	// //create csv for copy
-	// file := forecast2csv(log, res)
-
-	// _, err = fs.Store.masterX.Exec(copyCSV)
-	// if err != nil {
-	// 	log.Printf("error copying to db %s", err)
-	// }
-
-	// _, err = fs.Store.masterX.(file, "forecast")
+	if err != nil {
+		log.Printf("failed to populate db %s", err)
+	}
 
 }
 
 const drop = `DROP TABLE forecast`
 
 const createTable = `CREATE TABLE forecast (
-    Id SERIAL PRIMARY KEY, 
+    Id Int, 
     Time VARCHAR(255) UNIQUE,
     ScreenTemperature DOUBLE PRECISION,
     FeelsLikeTemp DOUBLE PRECISION, 

@@ -26,6 +26,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
@@ -60,9 +61,9 @@ func main() {
 		log.Fatalf("Could not create store because of error: %s", err)
 	}
 
-	// store.Stores.ForecastStore.Populate(file, log)
+	time.NewTimer(20 * time.Second)
 
-	// time.NewTimer(20 * time.Second)
+	store.Stores.ForecastStore.Populate(context.Background(), log)
 
 	// store.Stores.ForecastStore.Refresh(log)
 
