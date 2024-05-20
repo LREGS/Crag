@@ -65,7 +65,7 @@ func main() {
 
 	store.Stores.ForecastStore.Populate(context.Background(), log)
 
-	// store.Stores.ForecastStore.Refresh(log)
+	store.Stores.ForecastStore.Refresh(context.Background(), log)
 
 	srv := server.NewServer(context.Background(), log, store)
 
@@ -118,7 +118,7 @@ CREATE TABLE report (
 );
 
 CREATE TABLE forecast (
-	Id SERIAL PRIMARY KEY, 
+	Id Int, 
 	Time VARCHAR(255) UNIQUE,
 	ScreenTemperature DOUBLE PRECISION,
 	FeelsLikeTemp DOUBLE PRECISION, 

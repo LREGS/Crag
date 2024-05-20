@@ -55,6 +55,4 @@ CREATE TABLE forecast (
     Latitude DOUBLE PRECISION,
     Longitude DOUBLE PRECISION
 )
-
-COPY forecast FROM 'forecast.csv' WITH (format csv, header);
 EOF

@@ -24,7 +24,7 @@ func NewHandler(store store.ForecastStore) *Handler {
 func (h *Handler) RegisterRoutes(ctx context.Context, r *mux.Router) {
 	// "/forecast"
 	r.HandleFunc("", h.Post(ctx)).Methods("POST")
-	// r.HandleFunc("/{Id}", h.GetByCragId(ctx)).Methods("GET")
+	r.HandleFunc("/{Id}", h.GetByCragId(ctx)).Methods("GET")
 	r.HandleFunc("/all", h.GetAllForecasts(ctx)).Methods("GET")
 	r.HandleFunc("/{Id}", h.handleDeleteForecastById(ctx)).Methods("DELETE")
 }

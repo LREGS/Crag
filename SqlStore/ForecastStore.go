@@ -66,8 +66,7 @@ func (fs *SqlForecastStore) StoreForecast(ctx context.Context, forecast models.D
 		&storedForecast.TotalPrecipAmount,
 		&storedForecast.ProbOfPrecipitation,
 		&storedForecast.Latitude,
-		&storedForecast.Longitude,
-		&storedForecast.CragId)
+		&storedForecast.Longitude)
 	if err != nil {
 		return storedForecast, err
 	}
@@ -75,7 +74,7 @@ func (fs *SqlForecastStore) StoreForecast(ctx context.Context, forecast models.D
 	return storedForecast, nil
 }
 
-const getForecastByCrag = `select * from forecast where CragId = $1`
+const getForecastByCrag = `select * from forecast where Id = $1`
 
 func (fs *SqlForecastStore) GetForecastByCragId(ctx context.Context, CragId int) ([]models.DBForecast, error) {
 	//we're returning every forecast, need some function/ http endpoint that will serve
@@ -99,8 +98,7 @@ func (fs *SqlForecastStore) GetForecastByCragId(ctx context.Context, CragId int)
 			&forecast.TotalPrecipAmount,
 			&forecast.ProbOfPrecipitation,
 			&forecast.Latitude,
-			&forecast.Longitude,
-			&forecast.CragId)
+			&forecast.Longitude)
 		if err != nil {
 			return nil, err
 		}
@@ -137,12 +135,14 @@ func (fs *SqlForecastStore) GetAllForecastsByCragId(ctx context.Context) (map[in
 			&forecast.TotalPrecipAmount,
 			&forecast.ProbOfPrecipitation,
 			&forecast.Latitude,
-			&forecast.Longitude,
-			&forecast.CragId)
+			&forecast.Longitude)
 		if err != nil {
 			return nil, err
 		}
-		results[forecast.CragId] = append(results[forecast.CragId], forecast)
+
+		//please change this back
+
+		// results[forecast.CragId] = append(results[forecast.CragId], forecast)
 
 	}
 	return results, nil
@@ -164,8 +164,7 @@ func (fs *SqlForecastStore) DeleteForecastById(ctx context.Context, Id int) (mod
 		&forecast.TotalPrecipAmount,
 		&forecast.ProbOfPrecipitation,
 		&forecast.Latitude,
-		&forecast.Longitude,
-		&forecast.CragId); err != nil {
+		&forecast.Longitude); err != nil {
 		return models.DBForecast{}, err
 	}
 	//in this stage do we want to be validating here or does it go back through validation middleware I dont know?! Maybe middleware is only validating data from the client
@@ -185,11 +184,11 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 //		}
 //		return nil
 
-const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER`
+// const copyCSV = `COPY forecast FROM STDIN WITH CSV HEADER`
 
 func (fs *SqlForecastStore) Populate(ctx context.Context, log *log.Logger) {
 
-	payload := met.GetPayload(log, []float64{53.12000233374393, -4.000659549362343})
+	payload, _ := met.GetPayload(log, []float64{53.12000233374393, -4.000659549362343})
 
 	_, err := fs.Store.masterX.CopyFrom(
 		ctx,
@@ -230,19 +229,19 @@ const createTable = `CREATE TABLE forecast (
 
 func (fs *SqlForecastStore) Refresh(ctx context.Context, log *log.Logger) {
 
-	// log.Print("Deleting data from forecast")
-	// _, err := fs.Store.masterX.Exec(drop)
-	// if err != nil {
-	// 	log.Printf("failed dropping %s", err)
-	// }
+	log.Print("Deleting data from forecast")
+	_, err := fs.Store.masterX.Exec(ctx, drop)
+	if err != nil {
+		log.Printf("failed dropping %s", err)
+	}
 
-	// log.Print("Creating tables")
-	// _, err = fs.Store.masterX.Exec(createTable)
-	// if err != nil {
-	// 	log.Printf("failed creating table %s", err)
-	// }
+	log.Print("Creating tables")
+	_, err = fs.Store.masterX.Exec(ctx, createTable)
+	if err != nil {
+		log.Printf("failed creating table %s", err)
+	}
 
-	// fs.Populate(log)
+	fs.Populate(ctx, log)
 
 }
 
