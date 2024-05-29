@@ -122,3 +122,42 @@ func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
 	return payload, nil
 
 }
+
+func GetRedisPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
+
+	//if get forecast fails we get an index out of range error because of the timeSeries
+	//im not sure why the error is obviously being returned as nil but tis annoying
+
+	forecast, err := GetForecast(coords)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if len(forecast.Features) == 0 {
+
+	}
+
+	timeSeries := forecast.Features[0].Properties.TimeSeries
+
+	payload := make([][]interface{}, len(timeSeries))
+
+	for i := 0; i < len(timeSeries); i++ {
+
+		payload[i] = []interface{}{
+			i + 1, //Id
+			timeSeries[i].Time,
+			timeSeries[i].ScreenTemperature,
+			timeSeries[i].FeelsLikeTemperature,
+			timeSeries[i].WindSpeed10m,
+			timeSeries[i].WindDirectionFrom10m,
+			timeSeries[i].TotalPrecipAmount,
+			timeSeries[i].ProbOfPrecipitation,
+			forecast.Features[0].Geometry.Coordinates[0],
+			forecast.Features[0].Geometry.Coordinates[1],
+		}
+
+	}
+
+	return payload, nil
+
+}
