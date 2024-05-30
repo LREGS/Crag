@@ -123,7 +123,16 @@ func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
 
 }
 
-func GetRedisPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
+// this doesnt show prob of precipitation because that needs to be hourly, not totals
+type ForecastTotals struct {
+	HighestTemp      float64
+	LowestTemp       float64
+	AverageWindSpeed float64
+	WindDirection    int
+	TotalPrecip      float64
+}
+
+func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayload, error) {
 
 	//if get forecast fails we get an index out of range error because of the timeSeries
 	//im not sure why the error is obviously being returned as nil but tis annoying
@@ -139,25 +148,49 @@ func GetRedisPayload(log *log.Logger, coords []float64) ([][]interface{}, error)
 
 	timeSeries := forecast.Features[0].Properties.TimeSeries
 
-	payload := make([][]interface{}, len(timeSeries))
+	totals := make([]ForecastTotals, len(timeSeries))
+
+	time := timeSeries[0].Time[8:10]
+
+	total := ForecastTotals{
+		HighestTemp:      0.0,
+		LowestTemp:       timeSeries[0].ScreenTemperature,
+		AverageWindSpeed: 0.00,
+		WindDirection:    0,
+		TotalPrecip:      0,
+	}
 
 	for i := 0; i < len(timeSeries); i++ {
-
-		payload[i] = []interface{}{
-			i + 1, //Id
-			timeSeries[i].Time,
-			timeSeries[i].ScreenTemperature,
-			timeSeries[i].FeelsLikeTemperature,
-			timeSeries[i].WindSpeed10m,
-			timeSeries[i].WindDirectionFrom10m,
-			timeSeries[i].TotalPrecipAmount,
-			timeSeries[i].ProbOfPrecipitation,
-			forecast.Features[0].Geometry.Coordinates[0],
-			forecast.Features[0].Geometry.Coordinates[1],
+		// payload[i] = models.DBForecastPayload{
+		// 	Time:                timeSeries[i].Time,
+		// 	ScreenTemperature:   timeSeries[i].ScreenTemperature,
+		// 	FeelsLikeTemp:       timeSeries[i].FeelsLikeTemperature,
+		// 	WindSpeed:           timeSeries[i].WindSpeed10m,
+		// 	WindDirection:       timeSeries[i].WindDirectionFrom10m,
+		// 	TotalPrecipAmount:   timeSeries[i].TotalPrecipAmount,
+		// 	ProbOfPrecipitation: timeSeries[i].ProbOfPrecipitation,
+		// 	Longitude:           forecast.Features[0].Geometry.Coordinates[0],
+		// 	Latitude:            forecast.Features[0].Geometry.Coordinates[1],
+		// 	CragId:              0,
+		if time != timeSeries[i].Time[8:10] {
+			totals = append(totals, total)
+			time = timeSeries[i].Time
 		}
+
+		if timeSeries[i].ScreenTemperature > total.HighestTemp {
+			total.HighestTemp = timeSeries[i].ScreenTemperature
+		}
+
+		if timeSeries[i].ScreenTemperature < total.LowestTemp {
+			total.LowestTemp = timeSeries[i].ScreenTemperature
+		}
+
+		total.TotalPrecip = total.TotalPrecip + timeSeries[i].TotalPrecipAmount
 
 	}
 
-	return payload, nil
+	return total, nil
 
 }
+
+func checkTime(string)
