@@ -2,12 +2,12 @@ package met
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
-	"github.com/joho/godotenv"
 	"github.com/lregs/Crag/models"
 )
 
@@ -20,11 +20,13 @@ func GetForecast(coords []float64) (models.Forecast, error) {
 	//this should be recieving a client so im not making a new one with every request plls
 	client := http.Client{}
 
-	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude=%f&longitude=%f", coords[0], coords[1])
+	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/daily?latitude=%f&longitude=%f", coords[0], coords[1])
 
-	if err := godotenv.Load(); err != nil {
-		return forecast, err
-	}
+	//need this back online
+
+	// if err := godotenv.Load(); err != nil {
+	// 	return forecast, err
+	// }
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -95,14 +97,15 @@ func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
 	}
 
 	if len(forecast.Features) == 0 {
-
+		return nil, errors.New("empty forecast")
 	}
 
 	timeSeries := forecast.Features[0].Properties.TimeSeries
 
+	//not sure I need [][]interface{} as this was for sql copy
 	payload := make([][]interface{}, len(timeSeries))
 
-	for i := 0; i < len(timeSeries); i++ {
+	for i := 0; i < (len(timeSeries) - 1); i++ {
 
 		payload[i] = []interface{}{
 			i + 1, //Id
@@ -132,7 +135,7 @@ type ForecastTotals struct {
 	TotalPrecip      float64
 }
 
-func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayload, error) {
+func GetRedisPayload(log *log.Logger, coords []float64) (map[string][]ForecastTotals, error) {
 
 	//if get forecast fails we get an index out of range error because of the timeSeries
 	//im not sure why the error is obviously being returned as nil but tis annoying
@@ -143,12 +146,12 @@ func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayl
 	}
 
 	if len(forecast.Features) == 0 {
-
+		return nil, errors.New("empty forecast")
 	}
 
 	timeSeries := forecast.Features[0].Properties.TimeSeries
 
-	totals := make([]ForecastTotals, len(timeSeries))
+	totals := make(map[string][]ForecastTotals, len(timeSeries))
 
 	time := timeSeries[0].Time[8:10]
 
@@ -160,7 +163,7 @@ func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayl
 		TotalPrecip:      0,
 	}
 
-	for i := 0; i < len(timeSeries); i++ {
+	for i := 0; i < (len(timeSeries) - 1); i++ {
 		// payload[i] = models.DBForecastPayload{
 		// 	Time:                timeSeries[i].Time,
 		// 	ScreenTemperature:   timeSeries[i].ScreenTemperature,
@@ -173,8 +176,8 @@ func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayl
 		// 	Latitude:            forecast.Features[0].Geometry.Coordinates[1],
 		// 	CragId:              0,
 		if time != timeSeries[i].Time[8:10] {
-			totals = append(totals, total)
-			time = timeSeries[i].Time
+			totals[time] = append(totals[time], total)
+			time = timeSeries[i].Time[8:10]
 		}
 
 		if timeSeries[i].ScreenTemperature > total.HighestTemp {
@@ -187,10 +190,16 @@ func GetRedisPayload(log *log.Logger, coords []float64) ([]models.DBForecastPayl
 
 		total.TotalPrecip = total.TotalPrecip + timeSeries[i].TotalPrecipAmount
 
+		total.AverageWindSpeed = total.AverageWindSpeed + timeSeries[i].WindSpeed10m
+
 	}
 
-	return total, nil
+	total.AverageWindSpeed = total.AverageWindSpeed / float64(len(timeSeries))
+
+	return totals, nil
 
 }
 
-func checkTime(string)
+// func checkTime(string) {
+
+// }
