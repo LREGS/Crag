@@ -1,15 +1,41 @@
 package met
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/lregs/Crag/models"
 )
+
+func MarshallTestData(t *testing.T) models.Forecast {
+	jsonFile, err := os.Open("sampleData.json")
+	if err != nil {
+		t.Log(err)
+	}
+	defer jsonFile.Close()
+
+	byteJson, err := io.ReadAll(jsonFile)
+	if err != nil {
+		t.Log(err)
+	}
+
+	var forecast models.Forecast
+
+	if err := json.Unmarshal(byteJson, &forecast); err != nil {
+		t.Log(err)
+	}
+
+	return forecast
+
+}
 
 func TestGetForecast(t *testing.T) {
 
-	coords := []float64{53.121306, -4.012035}
+	coords := []float64{50.374422, -4.153563}
 
 	f, err := GetForecast(coords)
 	if err != nil {
@@ -44,11 +70,11 @@ func TestGetPayload(t *testing.T) {
 }
 
 func TestRedisPayload(t *testing.T) {
-	coords := []float64{53.121306, -4.012035}
+	data := MarshallTestData(t)
 	t.Run("Testing Redis Payload", func(t *testing.T) {
 		log := NewLogger("dummy.txt")
 
-		p, err := GetRedisPayload(log, coords)
+		p, err := GetRedisPayload(log, data)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -20,7 +20,7 @@ func GetForecast(coords []float64) (models.Forecast, error) {
 	//this should be recieving a client so im not making a new one with every request plls
 	client := http.Client{}
 
-	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/daily?latitude=%f&longitude=%f", coords[0], coords[1])
+	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude=%f&longitude=%f", coords[0], coords[1])
 
 	//need this back online
 
@@ -127,23 +127,36 @@ func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
 }
 
 // this doesnt show prob of precipitation because that needs to be hourly, not totals
-type ForecastTotals struct {
-	HighestTemp      float64
-	LowestTemp       float64
-	AverageWindSpeed float64
-	WindDirection    int
-	TotalPrecip      float64
+
+//These stats will provide header // outline stats for each crag but the full hourly will also be available on inspection I guess for all crags
+//but a condensed leaderboard style report will also be available
+
+// window is a weather window and the average weather conditions within the weather window are shown.
+// I'm not sure how useful the whole scale averages are for multi day windows but I guess the full hourly forecast will still be presented somewhere alongside the windows
+
+// This will represent a single window in time detailed by the time string.
+// each window is a minimum of 2 hours long
+type Window struct {
+	Time          []string
+	AvgTemp       float64
+	AvgWindSpeed  float64
+	WindDirection int
 }
 
-func GetRedisPayload(log *log.Logger, coords []float64) (map[string][]ForecastTotals, error) {
+type ForecastTotals struct {
+	HighestTemp   float64
+	LowestTemp    float64
+	AvgTemp       float64
+	AvgWindSpeed  float64
+	WindDirection int
+	TotalPrecip   float64
+	Windows       []Window
+}
+
+func GetRedisPayload(log *log.Logger, forecast models.Forecast) (map[string][]ForecastTotals, error) {
 
 	//if get forecast fails we get an index out of range error because of the timeSeries
 	//im not sure why the error is obviously being returned as nil but tis annoying
-
-	forecast, err := GetForecast(coords)
-	if err != nil {
-		log.Println(err)
-	}
 
 	if len(forecast.Features) == 0 {
 		return nil, errors.New("empty forecast")
@@ -156,29 +169,30 @@ func GetRedisPayload(log *log.Logger, coords []float64) (map[string][]ForecastTo
 	time := timeSeries[0].Time[8:10]
 
 	total := ForecastTotals{
-		HighestTemp:      0.0,
-		LowestTemp:       timeSeries[0].ScreenTemperature,
-		AverageWindSpeed: 0.00,
-		WindDirection:    0,
-		TotalPrecip:      0,
+		HighestTemp:   0.0,
+		LowestTemp:    timeSeries[0].ScreenTemperature,
+		AvgWindSpeed:  0.00,
+		WindDirection: 0,
+		TotalPrecip:   0,
+		Windows:       []Window{},
 	}
 
 	for i := 0; i < (len(timeSeries) - 1); i++ {
-		// payload[i] = models.DBForecastPayload{
-		// 	Time:                timeSeries[i].Time,
-		// 	ScreenTemperature:   timeSeries[i].ScreenTemperature,
-		// 	FeelsLikeTemp:       timeSeries[i].FeelsLikeTemperature,
-		// 	WindSpeed:           timeSeries[i].WindSpeed10m,
-		// 	WindDirection:       timeSeries[i].WindDirectionFrom10m,
-		// 	TotalPrecipAmount:   timeSeries[i].TotalPrecipAmount,
-		// 	ProbOfPrecipitation: timeSeries[i].ProbOfPrecipitation,
-		// 	Longitude:           forecast.Features[0].Geometry.Coordinates[0],
-		// 	Latitude:            forecast.Features[0].Geometry.Coordinates[1],
-		// 	CragId:              0,
+
 		if time != timeSeries[i].Time[8:10] {
 			totals[time] = append(totals[time], total)
 			time = timeSeries[i].Time[8:10]
+			total = ForecastTotals{
+				HighestTemp:   0.0,
+				LowestTemp:    timeSeries[0].ScreenTemperature,
+				AvgWindSpeed:  0.00,
+				WindDirection: 0,
+				TotalPrecip:   0,
+				Windows:       []Window{}}
 		}
+
+		windows := findWindows(timeSeries)
+		total.Windows = windows
 
 		if timeSeries[i].ScreenTemperature > total.HighestTemp {
 			total.HighestTemp = timeSeries[i].ScreenTemperature
@@ -188,18 +202,57 @@ func GetRedisPayload(log *log.Logger, coords []float64) (map[string][]ForecastTo
 			total.LowestTemp = timeSeries[i].ScreenTemperature
 		}
 
-		total.TotalPrecip = total.TotalPrecip + timeSeries[i].TotalPrecipAmount
+		// if timeSeries[i].TotalPrecipAmount != 0.00 {
+		// 	total.TotalPrecip += timeSeries[i].TotalPrecipAmount
+		// 	window = Window{}
+		// } else {
+		// 	window. = append(window, timeSeries[i].TotalPrecipAmount)
+		// }
 
-		total.AverageWindSpeed = total.AverageWindSpeed + timeSeries[i].WindSpeed10m
+		// if timeSeries[i].TotalPrecipAmount > 0.00 {
+
+		// } else {
+		// 	if !(timeSeries[i+1].TotalPrecipAmount > 0.00) {
+		// 		window = append(window, timeSeries[i].Time, timeSeries[i+1].Time)
+		// 		windows = append(windows, window)
+		// 	} else {
+		// 		total.Windows = windows
+		// 		window = []string{}
+		// 	}
+		// }
+
+		total.AvgWindSpeed = total.AvgWindSpeed + timeSeries[i].WindSpeed10m
+		total.AvgWindSpeed = total.AvgWindSpeed / float64(len(timeSeries))
 
 	}
-
-	total.AverageWindSpeed = total.AverageWindSpeed / float64(len(timeSeries))
 
 	return totals, nil
 
 }
 
-// func checkTime(string) {
+func findWindows(data []models.TimeSeriesData) []Window {
+	windows := []Window{}
+	time := []string{}
 
-// }
+	win := Window{}
+
+	for _, d := range data {
+		if d.TotalPrecipAmount == 0 {
+			time = append(time, d.Time)
+			win.AvgTemp += d.ScreenTemperature
+			win.AvgWindSpeed += d.WindSpeed10m
+			//need to find a way to generalise
+			win.WindDirection = d.WindDirectionFrom10m
+			continue
+		} else {
+			win.Time = time
+			windows = append(windows, win)
+			win = Window{}
+			continue
+		}
+
+	}
+
+	return windows
+
+}
