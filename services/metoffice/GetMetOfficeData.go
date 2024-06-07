@@ -1,6 +1,7 @@
 package met
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +10,81 @@ import (
 	"net/http"
 
 	"github.com/lregs/Crag/models"
+	"github.com/redis/go-redis/v9"
 )
+
+type TimeSeriesData struct {
+	Time                      string  `json:"time"`
+	ScreenTemperature         float64 `json:"screenTemperature"`
+	MaxScreenAirTemp          float64 `json:"maxScreenAirTemp"`
+	MinScreenAirTemp          float64 `json:"minScreenAirTemp"`
+	ScreenDewPointTemperature float64 `json:"screenDewPointTemperature"`
+	FeelsLikeTemperature      float64 `json:"feelsLikeTemperature"`
+	WindSpeed10m              float64 `json:"windSpeed10m"`
+	WindDirectionFrom10m      int     `json:"windDirectionFrom10m"`
+	WindGustSpeed10m          float64 `json:"windGustSpeed10m"`
+	Max10mWindGust            float64 `json:"max10mWindGust"`
+	Visibility                int     `json:"visibility"`
+	ScreenRelativeHumidity    float64 `json:"screenRelativeHumidity"`
+	Mslp                      int     `json:"mslp"`
+	UvIndex                   int     `json:"uvIndex"`
+	SignificantWeatherCode    int     `json:"significantWeatherCode"`
+	PrecipitationRate         float64 `json:"precipitationRate"`
+	TotalPrecipAmount         float64 `json:"totalPrecipAmount"`
+	TotalSnowAmount           float64 `json:"totalSnowAmount"`
+	ProbOfPrecipitation       int     `json:"probOfPrecipitation"`
+}
+
+type Feature struct {
+	Type        string     `json:"type"`
+	Geometry    Geometry   `json:"geometry"`
+	Properties  Properties `json:"properties"`
+	Coordinates []float64  `json:"coordinates"`
+}
+
+type Geometry struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"`
+}
+
+type Properties struct {
+	RequestPointDistance float64          `json:"requestPointDistance"`
+	ModelRunDate         string           `json:"modelRunDate"`
+	TimeSeries           []TimeSeriesData `json:"timeSeries"`
+}
+
+type Forecast struct {
+	Type     string    `json:"type"`
+	Features []Feature `json:"features"`
+}
+
+// Selects the data we want from the response
+
+type DBForecast struct {
+	Id                  int     `json:"id"`
+	Time                string  `json:"time"`
+	ScreenTemperature   float64 `json:"screenTemperature"`
+	FeelsLikeTemp       float64 `json:"feelsLikeTemp"`
+	WindSpeed           float64 `json:"windSpeed"`
+	WindDirection       int     `json:"windDirection"`
+	TotalPrecipAmount   float64 `json:"totalPrecipAmount"`
+	ProbOfPrecipitation int     `json:"probOfPrecipitation"`
+	Latitude            float64 `json:"latitude"`
+	Longitude           float64 `json:"longitude"`
+}
+
+type DBForecastPayload struct {
+	Time                string  `json:"time"`
+	ScreenTemperature   float64 `json:"screenTemperature"`
+	FeelsLikeTemp       float64 `json:"feelsLikeTemp"`
+	WindSpeed           float64 `json:"windSpeed"`
+	WindDirection       int     `json:"windDirection"`
+	TotalPrecipAmount   float64 `json:"totalPrecipAmount"`
+	ProbOfPrecipitation int     `json:"probOfPrecipitation"`
+	Latitude            float64 `json:"latitude"`
+	Longitude           float64 `json:"longitude"`
+	CragId              int     `json:"cragId"`
+}
 
 //do I need to have a struct that has the methods or just the functions I dont know
 
@@ -86,7 +161,7 @@ func GetForecast(coords []float64) (models.Forecast, error) {
 // 	return metOfficeHeaders{apikey: env[0], Accept: "application/json"}, nil
 // }
 
-func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
+func GetPayload(log *log.Logger, coords []float64) ([]DBForecast, error) {
 
 	//if get forecast fails we get an index out of range error because of the timeSeries
 	//im not sure why the error is obviously being returned as nil but tis annoying
@@ -103,21 +178,21 @@ func GetPayload(log *log.Logger, coords []float64) ([][]interface{}, error) {
 	timeSeries := forecast.Features[0].Properties.TimeSeries
 
 	//not sure I need [][]interface{} as this was for sql copy
-	payload := make([][]interface{}, len(timeSeries))
+	payload := make([]DBForecast, len(timeSeries))
 
 	for i := 0; i < (len(timeSeries) - 1); i++ {
 
-		payload[i] = []interface{}{
-			i + 1, //Id
-			timeSeries[i].Time,
-			timeSeries[i].ScreenTemperature,
-			timeSeries[i].FeelsLikeTemperature,
-			timeSeries[i].WindSpeed10m,
-			timeSeries[i].WindDirectionFrom10m,
-			timeSeries[i].TotalPrecipAmount,
-			timeSeries[i].ProbOfPrecipitation,
-			forecast.Features[0].Geometry.Coordinates[0],
-			forecast.Features[0].Geometry.Coordinates[1],
+		payload[i] = DBForecast{
+			Id:                  i + 1, //Id
+			Time:                timeSeries[i].Time,
+			ScreenTemperature:   timeSeries[i].ScreenTemperature,
+			FeelsLikeTemp:       timeSeries[i].FeelsLikeTemperature,
+			WindSpeed:           timeSeries[i].WindSpeed10m,
+			WindDirection:       timeSeries[i].WindDirectionFrom10m,
+			TotalPrecipAmount:   timeSeries[i].TotalPrecipAmount,
+			ProbOfPrecipitation: timeSeries[i].ProbOfPrecipitation,
+			Latitude:            forecast.Features[0].Geometry.Coordinates[0],
+			Longitude:           forecast.Features[0].Geometry.Coordinates[1],
 		}
 
 	}
@@ -143,6 +218,7 @@ type Window struct {
 	WindDirection int
 }
 
+// TODO: Change to dailyTotals
 type ForecastTotals struct {
 	HighestTemp   float64
 	LowestTemp    float64
@@ -150,79 +226,70 @@ type ForecastTotals struct {
 	AvgWindSpeed  float64
 	WindDirection int
 	TotalPrecip   float64
-	Windows       []Window
+	// Windows       [][]int
 }
 
-func GetRedisPayload(log *log.Logger, forecast models.Forecast) (map[string][]ForecastTotals, error) {
+// type MeanCalculator struct {
+// 	count int
+// 	mean float64
+// }
 
-	//if get forecast fails we get an index out of range error because of the timeSeries
-	//im not sure why the error is obviously being returned as nil but tis annoying
+//  func (mc *MeanCalculator) Add(value float64){
+// 	mc.count++
+// 	delta := value - mc.mean
+// 	mc.mean += delta / float64(mc.count)
+//  }
 
-	if len(forecast.Features) == 0 {
-		return nil, errors.New("empty forecast")
+func TotalsByDay(log *log.Logger, forecast Forecast) (map[string]*ForecastTotals, error) {
+
+	//1 hourly spot has three days worth of data. This function provides the totals for
+	//all three days
+
+	data := forecast.Features[0].Properties.TimeSeries
+
+	if len(data) == 0 {
+		return nil, errors.New("Forecast provided is empty")
 	}
 
-	timeSeries := forecast.Features[0].Properties.TimeSeries
+	// modelStartDate, err := strconv.Atoi(forecast.Features[0].Properties.ModelRunDate[8:10])
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	totals := make(map[string][]ForecastTotals, len(timeSeries))
+	totals := map[string]*ForecastTotals{}
 
-	time := timeSeries[0].Time[8:10]
+	//TODO: whats the better way than just reallocating a lot of the values here already
+	//put them into days and then total them? That will require two passes of the data
+	//but wont be continually reallocating the avgtemp etc
 
-	total := ForecastTotals{
-		HighestTemp:   0.0,
-		LowestTemp:    timeSeries[0].ScreenTemperature,
-		AvgWindSpeed:  0.00,
-		WindDirection: 0,
-		TotalPrecip:   0,
-		Windows:       []Window{},
+	//we can try and calculate a running average using the mean calculator and then adding that value as the avg instead of current
+	//clumsyness
+	for _, val := range data {
+
+		_, ok := totals[val.Time[8:10]]
+		if !ok {
+			totals[val.Time[8:10]] = &ForecastTotals{}
+			entry := totals[val.Time[8:10]]
+			entry.AvgTemp += val.ScreenTemperature
+			entry.AvgWindSpeed += val.WindSpeed10m
+			entry.HighestTemp = val.MaxScreenAirTemp
+			entry.LowestTemp = val.MinScreenAirTemp
+			//this is just assiging it as the first given value
+			entry.WindDirection = val.WindDirectionFrom10m
+			entry.TotalPrecip += val.TotalPrecipAmount
+		} else {
+			entry := totals[val.Time[8:10]]
+			entry.AvgTemp += val.ScreenTemperature
+			entry.AvgWindSpeed += val.WindSpeed10m
+			entry.TotalPrecip += val.TotalPrecipAmount
+		}
+
 	}
 
-	for i := 0; i < (len(timeSeries) - 1); i++ {
-
-		if time != timeSeries[i].Time[8:10] {
-			totals[time] = append(totals[time], total)
-			time = timeSeries[i].Time[8:10]
-			total = ForecastTotals{
-				HighestTemp:   0.0,
-				LowestTemp:    timeSeries[0].ScreenTemperature,
-				AvgWindSpeed:  0.00,
-				WindDirection: 0,
-				TotalPrecip:   0,
-				Windows:       []Window{}}
-		}
-
-		windows := findWindows(timeSeries)
-		total.Windows = windows
-
-		if timeSeries[i].ScreenTemperature > total.HighestTemp {
-			total.HighestTemp = timeSeries[i].ScreenTemperature
-		}
-
-		if timeSeries[i].ScreenTemperature < total.LowestTemp {
-			total.LowestTemp = timeSeries[i].ScreenTemperature
-		}
-
-		// if timeSeries[i].TotalPrecipAmount != 0.00 {
-		// 	total.TotalPrecip += timeSeries[i].TotalPrecipAmount
-		// 	window = Window{}
-		// } else {
-		// 	window. = append(window, timeSeries[i].TotalPrecipAmount)
-		// }
-
-		// if timeSeries[i].TotalPrecipAmount > 0.00 {
-
-		// } else {
-		// 	if !(timeSeries[i+1].TotalPrecipAmount > 0.00) {
-		// 		window = append(window, timeSeries[i].Time, timeSeries[i+1].Time)
-		// 		windows = append(windows, window)
-		// 	} else {
-		// 		total.Windows = windows
-		// 		window = []string{}
-		// 	}
-		// }
-
-		total.AvgWindSpeed = total.AvgWindSpeed + timeSeries[i].WindSpeed10m
-		total.AvgWindSpeed = total.AvgWindSpeed / float64(len(timeSeries))
+	for day, entry := range totals {
+		entry.AvgTemp = float64((entry.AvgTemp / float64((len(data) / 3))))
+		entry.AvgWindSpeed = float64((entry.AvgWindSpeed / float64((len(data) / 3))))
+		totals[day] = entry
 
 	}
 
@@ -230,29 +297,11 @@ func GetRedisPayload(log *log.Logger, forecast models.Forecast) (map[string][]Fo
 
 }
 
-func findWindows(data []models.TimeSeriesData) []Window {
-	windows := []Window{}
-	time := []string{}
+func storeTotals(ctx context.Context, totals map[string]*ForecastTotals, client *redis.Client) error {
 
-	win := Window{}
-
-	for _, d := range data {
-		if d.TotalPrecipAmount == 0 {
-			time = append(time, d.Time)
-			win.AvgTemp += d.ScreenTemperature
-			win.AvgWindSpeed += d.WindSpeed10m
-			//need to find a way to generalise
-			win.WindDirection = d.WindDirectionFrom10m
-			continue
-		} else {
-			win.Time = time
-			windows = append(windows, win)
-			win = Window{}
-			continue
-		}
-
+	if err := client.HSet(ctx, "dailyTotals", totals).Err(); err != nil {
+		return err
 	}
 
-	return windows
-
+	return nil
 }

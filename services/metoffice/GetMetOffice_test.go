@@ -2,16 +2,14 @@ package met
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"testing"
-
-	"github.com/lregs/Crag/models"
+	"time"
 )
 
-func MarshallTestData(t *testing.T) models.Forecast {
+func MarshallTestData(t *testing.T) Forecast {
 	jsonFile, err := os.Open("sampleData.json")
 	if err != nil {
 		t.Log(err)
@@ -23,7 +21,7 @@ func MarshallTestData(t *testing.T) models.Forecast {
 		t.Log(err)
 	}
 
-	var forecast models.Forecast
+	var forecast Forecast
 
 	if err := json.Unmarshal(byteJson, &forecast); err != nil {
 		t.Log(err)
@@ -33,6 +31,7 @@ func MarshallTestData(t *testing.T) models.Forecast {
 
 }
 
+// TODO: Remake they're using up the api calls
 func TestGetForecast(t *testing.T) {
 
 	coords := []float64{50.374422, -4.153563}
@@ -42,39 +41,41 @@ func TestGetForecast(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Log(f)
+
 	if len(f.Features) == 0 {
 		t.Fatal("forecast empty")
 	}
 }
 
-func TestGetPayload(t *testing.T) {
-	//at least we now we're getting a payload but not testing that its correct? DO I need too?
+// func TestGetPayload(t *testing.T) {
+// 	//at least we now we're getting a payload but not testing that its correct? DO I need too?
 
-	t.Run("Testing Get Payload", func(t *testing.T) {
+// 	t.Run("Testing Get Payload", func(t *testing.T) {
 
-		log := NewLogger("dummy.txt")
+// 		log := NewLogger("dummy.txt")
 
-		payload, err := GetPayload(log, []float64{53.120607133644576, -3.9983421531498133})
-		if err != nil {
-			t.Fatal(err)
-		}
+// 		payload, err := GetPayload(log, []float64{53.120607133644576, -3.9983421531498133})
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
 
-		fmt.Print(payload)
+// 		fmt.Print(payload)
 
-		if len(payload) > 1 != true {
-			t.Fatalf("payload empty")
-		}
+// 		if len(payload) > 1 != true {
+// 			t.Fatalf("payload empty")
+// 		}
 
-	})
+// 	})
 
-}
+// }
 
 func TestRedisPayload(t *testing.T) {
 	data := MarshallTestData(t)
 	t.Run("Testing Redis Payload", func(t *testing.T) {
 		log := NewLogger("dummy.txt")
 
-		p, err := GetRedisPayload(log, data)
+		p, err := TotalsByDay(log, data)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,7 +87,13 @@ func TestRedisPayload(t *testing.T) {
 			i++
 		}
 
-		t.Error(p)
+		t.Error(keys)
+
+		for _, v := range p {
+			t.Error(v)
+		}
+
+		t.Error(time.Now())
 
 	})
 }
