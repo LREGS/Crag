@@ -2,11 +2,6 @@ package forecast
 
 //This file will take the data from the met office api, extract the data it needs and store it within redis
 
-import (
-	"github.com/go-redis/cache/v9"
-	"github.com/redis/go-redis/v9"
-)
-
 type TimeSeriesData struct {
 	Time                      string  `json:"time"`
 	ScreenTemperature         float64 `json:"screenTemperature"`
@@ -67,23 +62,20 @@ type Forecast struct {
 	Longitude           float64 `json:"longitude"`
 }
 
-func redisClient() *redis.Client {
+// func redisClient() *redis.Client {
 
-	rc := redis.NewClient(&redis.Options{
-		Addr:     "redis-19441.c233.eu-west-1-1.ec2.redns.redis-cloud.com:19441",
-		Password: "",
-		DB:       0,
-	})
+// 	rc := redis.NewClient(&redis.Options{
+// 		Addr:     "redis-19441.c233.eu-west-1-1.ec2.redns.redis-cloud.com:19441",
+// 		Password: "",
+// 		DB:       0,
+// 	})
 
-	c := cache.New(&cache.Options{
-		Redis: rc,
-	})
+// 	c := cache.New(&cache.Options{
+// 		Redis: rc,
+// 	})
+// 	return rc
 
-	c.Once{}
-
-	return rc
-
-}
+// }
 
 func totalValues([]Forecast) {
 

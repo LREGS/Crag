@@ -26,31 +26,25 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 	store "github.com/lregs/Crag/SqlStore"
 	"github.com/lregs/Crag/server"
+	met "github.com/lregs/Crag/services/metoffice"
+	"github.com/redis/go-redis/v9"
+	"github.com/robfig/cron"
 )
 
 func main() {
 
-	conn, err := pgxpool.Connect(context.Background(), "postgres://postgres:postgres@CragDb:5432/postgres")
-	if err != nil {
-		panic(err)
-	}
-
-	// Connect to the database
-	// db, err := sql.Open("postgres", "host=CragDb user=postgres password=postgres dbname=postgres sslmode=disable")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// defer db.Close()
-
 	log := NewLogger("log.txt")
 	log.Println("log created")
+
+	conn, err := pgxpool.Connect(context.Background(), "postgres://postgres:postgres@CragDb:5432/postgres")
+	if err != nil {
+		log.Printf("db connection failed %s", err)
+	}
 
 	if err := initdb(log, conn); err != nil {
 		panic(err)
@@ -61,23 +55,78 @@ func main() {
 		log.Fatalf("Could not create store because of error: %s", err)
 	}
 
-	time.NewTimer(20 * time.Second)
+	rc := redis.NewClient(&redis.Options{
+		Addr:     "redis-19441.c233.eu-west-1-1.ec2.redns.redis-cloud.com:19441",
+		Password: "N9jHgekt2GxfqkHpQtNHL7jmwUCkq3zA",
+		DB:       0,
+	})
 
-	store.Stores.ForecastStore.Populate(context.Background(), log)
+	client := http.Client{}
 
-	store.Stores.ForecastStore.Refresh(context.Background(), log)
+	c := cron.New()
+	c.AddFunc("0 0 * * *", func() {
+		log.Println("cron started")
+
+		//we dont want to be making uneccassary requests. At the moment we're getting the data and then trying to store it
+		//and checking if it needs to be stored. This should be happening before the data is even requested.
+
+		data, err := met.GetForecast(client, []float64{53.121482791166194, -3.9988571454802284})
+		if err != nil {
+			log.Printf("couldn't get forecast %s", err)
+		}
+		payload, err := met.GetPayload(log, data)
+		if err != nil {
+			log.Printf("error getting payload %s", err)
+		}
+		if err := met.StoreData(log, context.Background(), rc, payload); err != nil {
+			log.Printf("failed storing during cron: %s", err)
+		}
+	})
+
+	c.Start()
+	log.Println("cron Started")
 
 	srv := server.NewServer(context.Background(), log, store)
 
+	log.Println("init redis")
+	if err = initRedis(log, client, rc); err != nil {
+		log.Printf("error init db %s", err)
+	}
+
+	log.Println("starting server")
 	err = http.ListenAndServe(":6969", srv)
 	if err != nil {
 		log.Fatalf("could not start srv because of err: %s", err)
 	}
 
-	// if err := gocron.Every(1).Day().At("03:30").Do(store.Stores.ForecastStore.Refresh()); err != nil {
-	// 	log.Printf("Refresh failed %s", err)
-	// }
+}
 
+func initRedis(log *log.Logger, client http.Client, rdb *redis.Client) error {
+
+	exists, err := rdb.Exists(context.Background(), "LastUpdated").Result()
+	if err != nil {
+		log.Printf("failed checking key for last update %s", err)
+		return err
+	}
+
+	if exists != 0 {
+		lastUpdate, err := rdb.Get(context.Background(), "LastUpdated").Result()
+	}
+
+	//check if data needs updating:
+
+	data, err := met.GetForecast(client, []float64{53.121482791166194, -3.9988571454802284})
+	if err != nil {
+		log.Printf("couldn't get forecast %s", err)
+	}
+	payload, err := met.GetPayload(log, data)
+	if err != nil {
+		log.Printf("error getting payload %s", err)
+	}
+	err = met.StoreData(log, context.Background(), rc, payload)
+	if err != nil {
+		log.Printf("error storing %s", err)
+	}
 }
 
 func NewLogger(filename string) *log.Logger {

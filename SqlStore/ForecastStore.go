@@ -6,9 +6,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/lregs/Crag/models"
-	met "github.com/lregs/Crag/services/metoffice"
 )
 
 type SqlForecastStore struct {
@@ -188,27 +186,27 @@ func (fs *SqlForecastStore) validatePayload(data models.DBForecastPayload) error
 
 func (fs *SqlForecastStore) Populate(ctx context.Context, log *log.Logger) {
 
-	payload, _ := met.GetPayload(log, []float64{53.12000233374393, -4.000659549362343})
+	// payload, _ := met.GetPayload(log, []float64{53.12000233374393, -4.000659549362343})
 
-	_, err := fs.Store.masterX.CopyFrom(
-		ctx,
-		pgx.Identifier{"forecast"},
-		[]string{
-			"id",
-			"time",
-			"screentemperature",
-			"feelsliketemp",
-			"windspeed",
-			"winddirection",
-			"totalprecipitation",
-			"probofprecipitation",
-			"latitude",
-			"longitude"},
-		pgx.CopyFromRows(payload),
-	)
-	if err != nil {
-		log.Printf("failed to populate db %s", err)
-	}
+	// _, err := fs.Store.masterX.CopyFrom(
+	// 	ctx,
+	// 	pgx.Identifier{"forecast"},
+	// 	[]string{
+	// 		"id",
+	// 		"time",
+	// 		"screentemperature",
+	// 		"feelsliketemp",
+	// 		"windspeed",
+	// 		"winddirection",
+	// 		"totalprecipitation",
+	// 		"probofprecipitation",
+	// 		"latitude",
+	// 		"longitude"},
+	// 	pgx.CopyFromRows(payload),
+	// )
+	// if err != nil {
+	// 	log.Printf("failed to populate db %s", err)
+	// }
 
 }
 
