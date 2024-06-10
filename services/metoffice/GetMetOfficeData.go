@@ -1,16 +1,12 @@
 package met
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 type TimeSeriesData struct {
@@ -86,17 +82,25 @@ type DBForecastPayload struct {
 	CragId              int     `json:"cragId"`
 }
 
-//do I need to have a struct that has the methods or just the functions I dont know
+type MetOfficeAPI struct {
+	BaseURL string
+	client  http.Client
+}
 
 // returns the forecast for a crag based on its stored coords
-func GetForecast(client http.Client, coords []float64) (Forecast, error) {
-	var forecast Forecast
+// eventually this needs to be called for all coords in the db so we can track x amount of crags and display
+// the weather windwows for each crag each hour and how they're changing
+// would we maybe want that as a feature of the struct? or would we just want something else controlling that and calling these
+// methods based on the avaialble coords
 
-	//this should be recieving a client so im not making a new one with every request plls
+// either way this returns the hourly forecast for a 72hour period from the met office data hub api.
+// the forecast is updated hourly.
+func (mAPI *MetOfficeAPI) GetForecast(coords []float64) (Forecast, error) {
+	var forecast Forecast
 
 	url := fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude=%f&longitude=%f", coords[0], coords[1])
 
-	//need this back online
+	//TODO: need this back online
 
 	// if err := godotenv.Load(); err != nil {
 	// 	return forecast, err
@@ -113,7 +117,7 @@ func GetForecast(client http.Client, coords []float64) (Forecast, error) {
 		"accept": {"application/json"},
 	}
 
-	res, err := client.Do(req)
+	res, err := mAPI.client.Do(req)
 	if err != nil {
 		return forecast, err
 
@@ -158,46 +162,6 @@ func GetForecast(client http.Client, coords []float64) (Forecast, error) {
 // 	}
 
 // 	return metOfficeHeaders{apikey: env[0], Accept: "application/json"}, nil
-// }
-
-// func GetPayload(log *log.Logger, coords []float64) ([]DBForecast, error) {
-
-// 	//if get forecast fails we get an index out of range error because of the timeSeries
-// 	//im not sure why the error is obviously being returned as nil but tis annoying
-
-// 	forecast, err := GetForecast(coords)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-
-// 	if len(forecast.Features) == 0 {
-// 		return nil, errors.New("empty forecast")
-// 	}
-
-// 	timeSeries := forecast.Features[0].Properties.TimeSeries
-
-// 	//not sure I need [][]interface{} as this was for sql copy
-// 	payload := make([]DBForecast, len(timeSeries))
-
-// 	for i := 0; i < (len(timeSeries) - 1); i++ {
-
-// 		payload[i] = DBForecast{
-// 			Id:                  i + 1, //Id
-// 			Time:                timeSeries[i].Time,
-// 			ScreenTemperature:   timeSeries[i].ScreenTemperature,
-// 			FeelsLikeTemp:       timeSeries[i].FeelsLikeTemperature,
-// 			WindSpeed:           timeSeries[i].WindSpeed10m,
-// 			WindDirection:       timeSeries[i].WindDirectionFrom10m,
-// 			TotalPrecipAmount:   timeSeries[i].TotalPrecipAmount,
-// 			ProbOfPrecipitation: timeSeries[i].ProbOfPrecipitation,
-// 			Latitude:            forecast.Features[0].Geometry.Coordinates[0],
-// 			Longitude:           forecast.Features[0].Geometry.Coordinates[1],
-// 		}
-
-// 	}
-
-// 	return payload, nil
-
 // }
 
 // this doesnt show prob of precipitation because that needs to be hourly, not totals
@@ -252,7 +216,7 @@ type ForecastPayload struct {
 	ForecastTotals   map[string]*ForecastTotals
 }
 
-func GetPayload(log *log.Logger, forecast Forecast) (ForecastPayload, error) {
+func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (ForecastPayload, error) {
 
 	//1 hourly spot has three days worth of data. This function provides the totals for
 	//all three days
@@ -309,83 +273,83 @@ func GetPayload(log *log.Logger, forecast Forecast) (ForecastPayload, error) {
 
 }
 
-func StoreData(log *log.Logger, ctx context.Context, rdb *redis.Client, payload ForecastPayload) error {
+// func StoreData(log *log.Logger, ctx context.Context, rdb *redis.Client, payload ForecastPayload) error {
 
-	data, err := json.Marshal(payload.ForecastTotals)
-	if err != nil {
-		log.Printf("failed marshalling %s", err)
-		return err
-	}
+// 	data, err := json.Marshal(payload.ForecastTotals)
+// 	if err != nil {
+// 		log.Printf("failed marshalling %s", err)
+// 		return err
+// 	}
 
-	//marks the time the db was last updated as that we can have a consistent key across both.
-	//init redis and update redis will both check the timestamp first to make sure the data actually needs to be updated
-	//some way needs to be resolved where we can check if its the same date but less than an hour previous
+// 	//marks the time the db was last updated as that we can have a consistent key across both.
+// 	//init redis and update redis will both check the timestamp first to make sure the data actually needs to be updated
+// 	//some way needs to be resolved where we can check if its the same date but less than an hour previous
 
-	exists, err := rdb.Exists(context.Background(), "LastUpdated").Result()
-	if err != nil {
-		log.Printf("failed checking key for last update %s", err)
-		return err
-	}
+// 	exists, err := rdb.Exists(context.Background(), "LastUpdated").Result()
+// 	if err != nil {
+// 		log.Printf("failed checking key for last update %s", err)
+// 		return err
+// 	}
 
-	if exists != 0 {
-		b, err := CheckLastUpdated(rdb, payload.LastModelRunTime)
-		if err != nil {
-			log.Printf("error checking update status %s", err)
-			return err
-		}
-		if b {
-			return errors.New("no update required")
-		}
+// 	if exists != 0 {
+// 		b, err := CheckLastUpdated(rdb, payload.LastModelRunTime)
+// 		if err != nil {
+// 			log.Printf("error checking update status %s", err)
+// 			return err
+// 		}
+// 		if b {
+// 			return errors.New("no update required")
+// 		}
 
-	}
+// 	}
 
-	if err := rdb.Set(ctx, "LastUpdated", payload.LastModelRunTime, 0).Err(); err != nil {
-		log.Printf("error storing last updated %s", err)
-		return err
-	}
+// 	if err := rdb.Set(ctx, "LastUpdated", payload.LastModelRunTime, 0).Err(); err != nil {
+// 		log.Printf("error storing last updated %s", err)
+// 		return err
+// 	}
 
-	if err := rdb.Set(ctx, "totals", data, 0).Err(); err != nil {
-		log.Printf("error storing totals %s", err)
-		return err
-	}
+// 	if err := rdb.Set(ctx, "totals", data, 0).Err(); err != nil {
+// 		log.Printf("error storing totals %s", err)
+// 		return err
+// 	}
 
-	rd, err := rdb.Get(ctx, "totals").Result()
-	if err != nil {
-		log.Printf("error getting totals, %s", err)
-		return err
-	}
+// 	rd, err := rdb.Get(ctx, "totals").Result()
+// 	if err != nil {
+// 		log.Printf("error getting totals, %s", err)
+// 		return err
+// 	}
 
-	log.Printf("data stored %s", rd)
+// 	log.Printf("data stored %s", rd)
 
-	return nil
-}
+// 	return nil
+// }
 
-func CheckLastUpdated(rdb *redis.Client, LastRunTime string) (bool, error) {
+// func CheckLastUpdated(rdb *redis.Client, LastRunTime string) (bool, error) {
 
-	res, err := rdb.Get(context.Background(), "LastUpdated").Result()
-	if err != nil {
-		return false, err
-	}
+// 	res, err := rdb.Get(context.Background(), "LastUpdated").Result()
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	if res != LastRunTime {
-		return true, nil
-	}
+// 	if res != LastRunTime {
+// 		return true, nil
+// 	}
 
-	return false, nil
+// 	return false, nil
 
-}
+// }
 
-func GetLastUpdateTime(rdb *redis.Client) (time.Time, error) {
-	res, err := rdb.Get(context.Background(), "LastUpdated").Result()
-	if err != nil {
-		return time.Time{}, err
-	}
+// func GetLastUpdateTime(rdb *redis.Client) (time.Time, error) {
+// 	res, err := rdb.Get(context.Background(), "LastUpdated").Result()
+// 	if err != nil {
+// 		return time.Time{}, err
+// 	}
 
-	parsedTime, err := time.Parse("2006-01-02T15:04Z07:00", res)
-	if err != nil {
-		return time.Time{}, err
-	}
+// 	parsedTime, err := time.Parse("2006-01-02T15:04Z07:00", res)
+// 	if err != nil {
+// 		return time.Time{}, err
+// 	}
 
-	return parsedTime, nil
+// 	return parsedTime, nil
 
-}
+// }
