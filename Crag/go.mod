@@ -1,4 +1,4 @@
-module github.com/lregs/Crag
+module github.com/lregs/Crag/internal/Crag
 
 go 1.21.6
 

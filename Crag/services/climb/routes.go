@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	store "github.com/lregs/Crag/SqlStore"
-	"github.com/lregs/Crag/models"
-	"github.com/lregs/Crag/util"
+	"github.com/lregs/Crag/internal/Crag/models"
+	"github.com/lregs/Crag/internal/Crag/util"
 )
 
 type Handler struct {
