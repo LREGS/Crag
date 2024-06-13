@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 const baseHourlyURL string = "https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?"
@@ -99,6 +100,7 @@ func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (Foreca
 
 	//we can try and calculate a running average using the mean calculator and then adding that value as the avg instead of current
 	//clumsyness
+
 	for _, val := range data {
 
 		_, ok := totals[val.Time[8:10]]
@@ -129,5 +131,21 @@ func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (Foreca
 	}
 
 	return ForecastPayload{LastModelRunTime: forecast.Features[0].Properties.ModelRunDate, ForecastTotals: totals}, nil
+
+}
+
+func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) {
+	var err error
+	windows := [][]time.Time{}
+	window := []time.Time{}
+	for i, val := range forecast.Features[0].Properties.TimeSeries {
+		if val.TotalPrecipAmount == 0 {
+			window[i], err = Str2Time(val.Time)
+			if err != nil {
+				log.Println("failed converting string to time during findwindows")
+			}
+		}
+		windows = append(windows, window)
+	}
 
 }

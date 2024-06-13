@@ -20,7 +20,7 @@ func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
 	return &MetStore{Log: log, Rdb: rdb}
 }
 
-func (m *MetStore) StoreForecastTotals(ctx context.Context, payload ForecastPayload) error {
+func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) error {
 
 	data, err := json.Marshal(payload.ForecastTotals)
 	if err != nil {
@@ -37,13 +37,6 @@ func (m *MetStore) StoreForecastTotals(ctx context.Context, payload ForecastPayl
 		log.Printf("error storing totals %s", err)
 		return err
 	}
-
-	parsedTime, err := Str2Time(payload.LastModelRunTime)
-	if err != nil {
-		return err
-	}
-
-	m.scheduler.Update(parsedTime)
 
 	return nil
 

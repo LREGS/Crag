@@ -19,6 +19,8 @@ func (s *Scheduler) Update(lastUpdated time.Time) {
 
 	var nextTick time.Time
 
+	log.Println("Starting scheduler")
+
 	if time.Since(lastUpdated).Hours() > 1.00 {
 		nextTick = time.Now()
 	} else {
@@ -32,6 +34,7 @@ func (s *Scheduler) Update(lastUpdated time.Time) {
 	diff := time.Until(nextTick)
 	if s.timer == nil {
 		s.timer = time.NewTimer(diff)
+		return
 	} else {
 		s.timer.Reset(diff)
 	}
@@ -48,10 +51,12 @@ func (s *Scheduler) Update(lastUpdated time.Time) {
 
 func (s *Scheduler) startSchedule(log *log.Logger, metAPI *MetOfficeAPI, store *MetStore, lastUpdate time.Time) {
 
+	log.Println("checking reschedule")
+
 	s.Update(lastUpdate)
 	for {
 		<-s.timer.C
-		ExecuteRefreshProcess(log, metAPI, store)
+		lastUpdate := ExecuteRefreshProcess(log, metAPI, store)
 		s.Update(lastUpdate) //placeholder for the last update time from the api
 
 	}

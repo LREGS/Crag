@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 
 func main() {
 
-	log := NewLogger("log.txt")
+	loger := NewLogger("log.txt")
+
+	loger.Println("started")
 
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalf("couldn't load environment variables")
@@ -29,20 +32,34 @@ func main() {
 	scheduler := Scheduler{}
 
 	api := NewMetAPI(os.Getenv("apikey"))
-	store := NewMetStore(rc, log)
+	store := NewMetStore(rc, loger)
 
-	lastUpdate, err := store.GetLastUpdate(log)
-	switch err {
-	case ErrorRedis:
-		//because api updates every hour the scheduler will shedule an immediate trigger to fetch the data and store it
-		go scheduler.startSchedule(log, api, store, (time.Now().Add(-3 * time.Hour)))
+	// lastUpdate, err := store.GetLastUpdate(loger)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// switch err {
+	// case ErrorRedis:
+	// 	//because api updates every hour the scheduler will shedule an immediate trigger to fetch the data and store it
+	// 	go scheduler.startSchedule(loger, api, store, (time.Now().Add(-3 * time.Hour)))
 
-		if err != nil {
-			log.Println(err)
-		}
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
 
+	// }
+
+	// at the moment the scheduler is starting from every hour from the time the app is started.
+	// it needs to be an hour from when it was last updated
+
+	go scheduler.startSchedule(loger, api, store, time.Now())
+
+	router := http.NewServeMux()
+
+	if err := http.ListenAndServe(":6968", router); err != nil {
+		panic(err)
 	}
-	go scheduler.startSchedule(log, api, store, lastUpdate)
+
 }
 
 func Str2Time(timeString string) (time.Time, error) {
@@ -54,7 +71,7 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) {
+func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) time.Time {
 
 	f, err := api.GetForecast([]float64{53.12266792026611, -3.9965825915253648})
 	if err != nil {
@@ -66,8 +83,15 @@ func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) 
 		log.Printf("failed creating payload %s", err)
 	}
 
-	if err := store.StoreForecastTotals(context.Background(), p); err != nil {
+	if err := store.ForecastTotals(context.Background(), p); err != nil {
 		log.Printf("failed storing forecast totals, %s", err)
 	}
+
+	t, err := store.GetLastUpdate(log)
+	if err != nil {
+		log.Printf("failed refresh: couldn't get last update value")
+	}
+
+	return t
 
 }
