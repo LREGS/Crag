@@ -28,6 +28,8 @@ func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) 
 		return err
 	}
 
+	// this is adding the time into redis like "2024-06-13 21:00:00.31195387 +0100 BST m=+2814.586676661" and
+	// its causing the scheduler to fail because it cannot parse a time in this format
 	if err := m.Rdb.Set(ctx, "LastUpdated", time.Now().String(), 0).Err(); err != nil {
 		log.Printf("error storing last updated %s", err)
 		return err

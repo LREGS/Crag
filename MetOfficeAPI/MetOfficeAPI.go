@@ -134,18 +134,28 @@ func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (Foreca
 
 }
 
-func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) {
-	var err error
+// it seems to return before the end of the loop but the logs print out every value, its just
+// every value is not being added to the slices?
+
+func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) [][]time.Time {
+
 	windows := [][]time.Time{}
 	window := []time.Time{}
 	for i, val := range forecast.Features[0].Properties.TimeSeries {
-		if val.TotalPrecipAmount == 0 {
-			window[i], err = Str2Time(val.Time)
-			if err != nil {
-				log.Println("failed converting string to time during findwindows")
-			}
-		}
-		windows = append(windows, window)
-	}
+		log.Println(val.Time, val.TotalPrecipAmount, i)
+		if val.TotalPrecipAmount != 0 && len(window) > 0 {
+			windows = append(windows, window)
 
+			continue
+		}
+
+		t, err := Str2Time(val.Time)
+		if err != nil {
+			log.Println("failed converting string to time during findwindows")
+		}
+		window = append(window, t)
+		continue
+	}
+	log.Println("finished")
+	return windows
 }
