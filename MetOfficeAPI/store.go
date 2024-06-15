@@ -22,9 +22,20 @@ func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
 
 func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) error {
 
+	// clear cache before every store as we only care about the last hours results
+	if err := m.Flush(); err != nil {
+		log.Printf("couldn't update cache because of error whilst flushing %s", err)
+		return err
+	}
+
 	data, err := json.Marshal(payload.ForecastTotals)
 	if err != nil {
 		log.Printf("failed marshalling %s", err)
+		return err
+	}
+
+	windows, err := json.Marshal(payload.Windows)
+	if err != nil {
 		return err
 	}
 
@@ -40,8 +51,22 @@ func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) 
 		return err
 	}
 
+	if err := m.Rdb.Set(ctx, "windows", windows, 0).Err(); err != nil {
+		log.Printf("failed storing windows %s", err)
+		return err
+	}
+
 	return nil
 
+}
+
+func (m *MetStore) Flush() error {
+	err := m.Rdb.FlushDB(context.Background()).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")

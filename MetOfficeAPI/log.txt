@@ -1,3 +1,2 @@
-[main]2024/06/13 20:13:05 main.go:20: started
-[main]2024/06/13 20:13:05 scheduler.go:54: checking reschedule
-[main]2024/06/13 21:00:00 main.go:92: failed refresh: couldn't get last update value
+[main]2024/06/15 17:28:26 main.go:20: started
+[main]2024/06/15 17:28:26 scheduler.go:54: checking reschedule

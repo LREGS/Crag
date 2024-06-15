@@ -130,11 +130,13 @@ func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (Foreca
 
 	}
 
-	return ForecastPayload{LastModelRunTime: forecast.Features[0].Properties.ModelRunDate, ForecastTotals: totals}, nil
+	return ForecastPayload{LastModelRunTime: forecast.Features[0].Properties.ModelRunDate, ForecastTotals: totals, Windows: mAPI.FindWindows(log, forecast)}, nil
 
 }
 
 func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) [][]time.Time {
+
+	//probably should be returning and handling our errors in this
 
 	var startOfWindow string
 	var endOfWindow string

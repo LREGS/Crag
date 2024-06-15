@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 //Model the incoming data from the met office hourly api
 
 type TimeSeriesData struct {
@@ -54,7 +56,6 @@ type ForecastTotals struct {
 	AvgWindSpeed  float64
 	WindDirection int
 	TotalPrecip   float64
-	// Windows       [][]int
 }
 
 // A window is a gap in precipitation of more than 1hour and gives the amount of rain the area has just experienced.
@@ -72,4 +73,5 @@ type Window struct {
 type ForecastPayload struct {
 	LastModelRunTime string
 	ForecastTotals   map[string]*ForecastTotals
+	Windows          [][]time.Time
 }
