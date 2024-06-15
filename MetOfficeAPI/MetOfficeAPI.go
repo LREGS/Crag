@@ -134,28 +134,79 @@ func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (Foreca
 
 }
 
-// it seems to return before the end of the loop but the logs print out every value, its just
-// every value is not being added to the slices?
-
 func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) [][]time.Time {
 
+	var startOfWindow string
+	var endOfWindow string
+
 	windows := [][]time.Time{}
-	window := []time.Time{}
-	for i, val := range forecast.Features[0].Properties.TimeSeries {
-		log.Println(val.Time, val.TotalPrecipAmount, i)
-		if val.TotalPrecipAmount != 0 && len(window) > 0 {
-			windows = append(windows, window)
+	for i := 0; i < len(forecast.Features[0].Properties.TimeSeries); i++ {
+
+		currForecast := forecast.Features[0].Properties.TimeSeries[i]
+
+		if currForecast.TotalPrecipAmount != 0.00 {
+			if startOfWindow != "" {
+				endOfWindow = currForecast.Time
+				startTime, err := Str2Time(startOfWindow)
+				if err != nil {
+					log.Printf("faield converting start string %s", err)
+					continue
+				}
+				endTime, err := Str2Time(endOfWindow)
+				if err != nil {
+					log.Printf("faield converting end string %s", err)
+					continue
+				}
+				windows = append(windows, []time.Time{startTime, endTime})
+				//	reset pointer
+				// log.Println(startOfWindow, endOfWindow)
+				startOfWindow = ""
+
+			}
 
 			continue
 		}
 
-		t, err := Str2Time(val.Time)
-		if err != nil {
-			log.Println("failed converting string to time during findwindows")
+		if startOfWindow == "" {
+			startOfWindow = currForecast.Time
 		}
-		window = append(window, t)
-		continue
+
+		if i == (len(forecast.Features[0].Properties.TimeSeries) - 1) {
+			if currForecast.TotalPrecipAmount != 0.00 && startOfWindow != "" {
+				endOfWindow = forecast.Features[0].Properties.TimeSeries[i-1].Time
+				startTime, err := Str2Time(startOfWindow)
+				if err != nil {
+					log.Printf("faield converting start string %s", err)
+					continue
+				}
+				endTime, err := Str2Time(endOfWindow)
+				if err != nil {
+					log.Printf("faield converting end string %s", err)
+					continue
+				}
+				windows = append(windows, []time.Time{startTime, endTime})
+			}
+
+			if startOfWindow != "" {
+				endOfWindow = forecast.Features[0].Properties.TimeSeries[i-1].Time
+				startTime, err := Str2Time(startOfWindow)
+				if err != nil {
+					log.Printf("faield converting start string %s", err)
+					continue
+				}
+				endTime, err := Str2Time(endOfWindow)
+				if err != nil {
+					log.Printf("faield converting end string %s", err)
+					continue
+				}
+				windows = append(windows, []time.Time{startTime, endTime})
+			}
+
+		}
+
+		log.Println(startOfWindow, endOfWindow)
+
 	}
-	log.Println("finished")
+
 	return windows
 }

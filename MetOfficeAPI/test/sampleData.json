@@ -998,40 +998,8 @@
               "uvIndex": 4,
               "significantWeatherCode": 1,
               "precipitationRate": 0,
-              "totalPrecipAmount": 0,
+              "totalPrecipAmount": 0.00,
               "totalSnowAmount": 0,
-              "probOfPrecipitation": 1
-            },
-            {
-              "time": "2023-07-07T09:00Z",
-              "screenTemperature": 19.4,
-              "screenDewPointTemperature": 12.6,
-              "feelsLikeTemperature": 17.26,
-              "windSpeed10m": 4.38,
-              "windDirectionFrom10m": 163,
-              "windGustSpeed10m": 8.38,
-              "visibility": 32233,
-              "screenRelativeHumidity": 64.86,
-              "mslp": 101574,
-              "uvIndex": 5,
-              "significantWeatherCode": 1,
-              "precipitationRate": 0,
-              "probOfPrecipitation": 1
-            },
-            {
-              "time": "2023-07-07T10:00Z",
-              "screenTemperature": 20.09,
-              "screenDewPointTemperature": 12.33,
-              "feelsLikeTemperature": 17.78,
-              "windSpeed10m": 4.47,
-              "windDirectionFrom10m": 160,
-              "windGustSpeed10m": 8.66,
-              "visibility": 33078,
-              "screenRelativeHumidity": 61.12,
-              "mslp": 101570,
-              "uvIndex": 6,
-              "significantWeatherCode": 1,
-              "precipitationRate": 0,
               "probOfPrecipitation": 1
             }
           ]
