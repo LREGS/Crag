@@ -6,8 +6,15 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/lregs/Crag/models"
+	"github.com/lregs/CragWeather/Crag/models"
 )
+
+type Climb struct {
+	Id     int    `json:"id"`
+	Name   string `json:"name"`
+	Grade  string `json:"grade"`
+	CragID int    `json:"cragId"`
+}
 
 type SqlClimbStore struct {
 	Store *SqlStore

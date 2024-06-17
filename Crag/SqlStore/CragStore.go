@@ -5,7 +5,7 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/lregs/Crag/models"
+	"github.com/lregs/CragWeather/Crag/models"
 )
 
 type SqlCragStore struct {

@@ -3,9 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
-	"log"
 
-	"github.com/lregs/Crag/models"
+	"github.com/lregs/CragWeather/Crag/models"
 )
 
 //go:generate moq -out storess_test.go . CragStore
@@ -32,13 +31,4 @@ type ClimbStore interface {
 	GetClimbById(ctx context.Context, Id int) (models.Climb, error)
 	UpdateClimb(ctx context.Context, climb models.Climb) (models.Climb, error)
 	DeleteClimb(ctx context.Context, Id int) (models.Climb, error)
-}
-
-type ForecastStore interface {
-	StoreForecast(ctx context.Context, res models.DBForecastPayload) (models.DBForecast, error)
-	GetForecastByCragId(ctx context.Context, CragId int) ([]models.DBForecast, error)
-	GetAllForecastsByCragId(ctx context.Context) (map[int][]models.DBForecast, error)
-	DeleteForecastById(ctx context.Context, Id int) (models.DBForecast, error)
-	Populate(ctx context.Context, log *log.Logger)
-	Refresh(ctx context.Context, log *log.Logger)
 }
