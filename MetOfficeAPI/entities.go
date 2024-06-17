@@ -75,3 +75,10 @@ type ForecastPayload struct {
 	ForecastTotals   map[string]*ForecastTotals
 	Windows          [][]time.Time
 }
+
+// <li><b>Highest Temp:</b> {{$value.HighestTemp}}</li>
+// <li><b>LowestTemp:</b> {{$value.LowestTemp}}</li>
+// <li><b>AvgTemp:</b> {{$value.AvgTemp}}</li>
+// <li><b>AvgWindSpeed:</b> {{$value.AvgWindSpeed}}</li>
+// <li><b>WindDirection:</b> {{$value.WindDirection}}</li>
+// <li><b>Total Precip:</b> {{$value.TotalPrecip}}</li>

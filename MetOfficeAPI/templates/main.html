@@ -1,0 +1,23 @@
+{{define "main"}}
+<html>
+<head>
+    <title>Daily Totals</title>
+</head>
+
+<body>
+<div>
+    <h3>ForecastTotals</h3>
+    <ul>
+        <li>{{.HighestTemp}}</li>
+        <li>{{.LowestTemp}}</li>
+        <li>{{.AvgTemp}}</li>
+        <li>{{.AvgWindSpeed}}</li>
+        <li>{{.WindDirection}}</li>
+        <li>{{.TotalPrecip}}</li>
+    </ul>
+
+</div>
+</body>
+
+</html>
+{{end}}

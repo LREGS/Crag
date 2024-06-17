@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -54,7 +55,26 @@ func main() {
 
 	go scheduler.startSchedule(loger, api, store, time.Now())
 
+	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
+
 	router := http.NewServeMux()
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		data, err := store.GetForecastTotals()
+		if err != nil {
+			log.Fatal("failed to get data")
+		}
+
+		// d := []ForecastTotals{}
+		// for _, key := range data {
+
+		// }
+
+		if err := tmpl.ExecuteTemplate(w, "main", *data["17"]); err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 
 	if err := http.ListenAndServe(":6968", router); err != nil {
 		panic(err)

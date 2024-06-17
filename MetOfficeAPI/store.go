@@ -28,6 +28,7 @@ func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) 
 		return err
 	}
 
+	//	is it better to split the storage like this from a single payload or should it be independant
 	data, err := json.Marshal(payload.ForecastTotals)
 	if err != nil {
 		log.Printf("failed marshalling %s", err)
@@ -71,9 +72,9 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) GetForecastTotals() (ForecastTotals, error) {
+func (m *MetStore) GetForecastTotals() (map[string]*ForecastTotals, error) {
 
-	var totals ForecastTotals
+	var totals map[string]*ForecastTotals
 
 	res, err := m.Rdb.Get(context.Background(), "totals").Bytes()
 	if err != nil {
