@@ -93,6 +93,10 @@ func Str2Time(timeString string) (time.Time, error) {
 
 func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) time.Time {
 
+	//	need to now figure out how to properly store multiple at a time
+
+	crags, err := ReadFile("crags.txt")
+
 	f, err := api.GetForecast([]float64{53.12266792026611, -3.9965825915253648})
 	if err != nil {
 		log.Printf("couldn't fetch met data %s", err)
