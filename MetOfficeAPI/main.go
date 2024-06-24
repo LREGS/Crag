@@ -95,7 +95,7 @@ func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) 
 
 	//	need to now figure out how to properly store multiple at a time
 
-	crags, err := ReadFile("crags.txt")
+	crags, err := ReadCragsTxt("crags.txt")
 
 	f, err := api.GetForecast([]float64{53.12266792026611, -3.9965825915253648})
 	if err != nil {
