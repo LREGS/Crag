@@ -206,7 +206,7 @@ func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) [][]ti
 
 		}
 
-		log.Println(startOfWindow, endOfWindow)
+		// log.Println(startOfWindow, endOfWindow)
 
 	}
 

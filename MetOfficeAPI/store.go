@@ -20,7 +20,7 @@ func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
 	return &MetStore{Log: log, Rdb: rdb}
 }
 
-func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) error {
+func (m *MetStore) Totals(ctx context.Context, name string, payload ForecastPayload) error {
 
 	// clear cache before every store as we only care about the last hours results
 	if err := m.Flush(); err != nil {
@@ -29,31 +29,39 @@ func (m *MetStore) ForecastTotals(ctx context.Context, payload ForecastPayload) 
 	}
 
 	//	is it better to split the storage like this from a single payload or should it be independant
-	data, err := json.Marshal(payload.ForecastTotals)
+	// data, err := json.Marshal(payload.ForecastTotals)
+	// if err != nil {
+	// 	log.Printf("failed marshalling %s", err)
+	// 	return err
+	// }
+
+	// windows, err := json.Marshal(payload.Windows)
+	// if err != nil {
+	// 	return err
+	// }
+
+	p, err := json.Marshal(payload)
 	if err != nil {
-		log.Printf("failed marshalling %s", err)
 		return err
 	}
 
-	windows, err := json.Marshal(payload.Windows)
-	if err != nil {
-		return err
-	}
+	// if err := m.Rdb.Set(ctx, "LastUpdated", time.Now().String(), 0).Err(); err != nil {
+	// 	log.Printf("error storing last updated %s", err)
+	// 	return err
+	// }
 
-	// this is adding the time into redis like "2024-06-13 21:00:00.31195387 +0100 BST m=+2814.586676661" and
-	// its causing the scheduler to fail because it cannot parse a time in this format
-	if err := m.Rdb.Set(ctx, "LastUpdated", time.Now().String(), 0).Err(); err != nil {
-		log.Printf("error storing last updated %s", err)
-		return err
-	}
+	// if err := m.Rdb.Set(ctx, "totals", data, 0).Err(); err != nil {
+	// 	log.Printf("error storing totals %s", err)
+	// 	return err
+	// }
 
-	if err := m.Rdb.Set(ctx, "totals", data, 0).Err(); err != nil {
-		log.Printf("error storing totals %s", err)
-		return err
-	}
+	// if err := m.Rdb.Set(ctx, "windows", windows, 0).Err(); err != nil {
+	// 	log.Printf("failed storing windows %s", err)
+	// 	return err
+	// }
 
-	if err := m.Rdb.Set(ctx, "windows", windows, 0).Err(); err != nil {
-		log.Printf("failed storing windows %s", err)
+	if err := m.Rdb.Set(ctx, name, p, 0).Err(); err != nil {
+		log.Printf("failed storing payload %s", err)
 		return err
 	}
 
@@ -105,6 +113,14 @@ func (m *MetStore) GetLastUpdate(log *log.Logger) (time.Time, error) {
 	}
 
 	return parsedTime, nil
+}
+
+func (m *MetStore) SetLastUpdatedNow() error {
+	if err := m.Rdb.Set(context.Background(), "LastUpdated", time.Now().String(), 0).Err(); err != nil {
+		log.Printf("error storing last updated %s", err)
+		return err
+	}
+	return nil
 }
 
 // The scheduler is not part of the Store, the same way as the api access isn't part of the store.

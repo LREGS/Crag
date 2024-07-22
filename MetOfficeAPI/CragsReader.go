@@ -34,9 +34,7 @@ func ReadCragsTxt(n string) ([]Crag, error) {
 			return []Crag{}, err
 		}
 
-	
-
-		res = append(res, Crag{name: name[0], Latitude: lat, Longitude: lon,)
+		res = append(res, Crag{Name: name[0], Latitude: lat, Longitude: lon})
 	}
 
 	if err = scanner.Err(); err != nil {
@@ -44,8 +42,4 @@ func ReadCragsTxt(n string) ([]Crag, error) {
 	}
 
 	return res, nil
-}
-
-func worker() {
-
 }

@@ -77,7 +77,7 @@ type ForecastPayload struct {
 }
 
 type Crag struct {
-	name      string
+	Name      string
 	Latitude  float64
 	Longitude float64
 }
