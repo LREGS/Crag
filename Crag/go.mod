@@ -1,6 +1,6 @@
-module github.com/lregs/Crag/internal/Crag
+module github.com/lregs/CragWeather/Crag
 
-go 1.21.6
+go 1.22.4
 
 require (
 	github.com/gorilla/mux v1.8.1

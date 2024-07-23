@@ -1,10 +1,10 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"text/template"
 	"time"
 
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	rc := redis.NewClient(&redis.Options{
-		Addr:     "redis-19441.c233.eu-west-1-1.ec2.redns.redis-cloud.com:19441",
+		Addr:     "redis-13149.c85.us-east-1-2.ec2.redns.redis-cloud.com:13149",
 		Password: os.Getenv("redis"),
 		DB:       0,
 	})
@@ -35,40 +35,20 @@ func main() {
 	api := NewMetAPI(os.Getenv("apikey"))
 	store := NewMetStore(rc, loger)
 
-	// lastUpdate, err := store.GetLastUpdate(loger)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// switch err {
-	// case ErrorRedis:
-	// 	//because api updates every hour the scheduler will shedule an immediate trigger to fetch the data and store it
-	// 	go scheduler.startSchedule(loger, api, store, (time.Now().Add(-3 * time.Hour)))
-
-	// 	if err != nil {
-	// 		log.Println(err)
-	// 	}
-
-	// }
-
 	// at the moment the scheduler is starting from every hour from the time the app is started.
 	// it needs to be an hour from when it was last updated
 
-	go scheduler.startSchedule(loger, api, store, time.Now())
+	go scheduler.startSchedule(loger, api, store, time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC))
 
 	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
 
 	router := http.NewServeMux()
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data, err := store.GetForecastTotals()
+		data, err := store.GetTotals()
 		if err != nil {
-			log.Fatal("failed to get data")
+			log.Fatal("failed to get data %s", err)
 		}
-
-		// d := []ForecastTotals{}
-		// for _, key := range data {
-
-		// }
 
 		if err := tmpl.ExecuteTemplate(w, "main", *data["17"]); err != nil {
 			log.Println(err)
@@ -91,27 +71,8 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) time.Time {
-
-	f, err := api.GetForecast([]float64{53.12266792026611, -3.9965825915253648})
-	if err != nil {
-		log.Printf("couldn't fetch met data %s", err)
-	}
-
-	p, err := api.GetPayload(log, f)
-	if err != nil {
-		log.Printf("failed creating payload %s", err)
-	}
-
-	if err := store.ForecastTotals(context.Background(), p); err != nil {
-		log.Printf("failed storing forecast totals, %s", err)
-	}
-
-	t, err := store.GetLastUpdate(log)
-	if err != nil {
-		log.Printf("failed refresh: couldn't get last update value")
-	}
-
-	return t
-
+type forecastMutex struct {
+	mu sync.Mutex
+	//sorted by crag name and complete forecast
+	forecastResults map[string]Forecast
 }

@@ -1,3 +1,2 @@
-[main]2024/05/13 07:18:04 main.go:45: log created
-[main]2024/05/13 07:18:04 main.go:185: db inited
-[main]2024/05/13 07:18:06 routes.go:49: error message is pq: insert or update on table "climb" violates foreign key constraint "climb_cragid_fkey"
+[main]2024/06/17 17:51:24 main.go:39: log created
+[main]2024/06/17 17:51:26 main.go:43: db connection failed failed to connect to `host=CragDb user=postgres database=postgres`: hostname resolving error (lookup CragDb on 172.26.112.1:53: no such host)

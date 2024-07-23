@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	store "github.com/lregs/Crag/SqlStore"
-	"github.com/lregs/Crag/models"
-	"github.com/lregs/Crag/util"
+	store "github.com/lregs/CragWeather/Crag/SqlStore"
+	"github.com/lregs/CragWeather/Crag/models"
+	"github.com/lregs/CragWeather/Crag/util"
 )
 
 type Handler struct {

@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/lregs/Crag/models"
-	"github.com/lregs/Crag/util"
+	"github.com/lregs/CragWeather/Crag/models"
+	"github.com/lregs/CragWeather/Crag/util"
+
 	"github.com/stretchr/testify/assert"
 )
 
