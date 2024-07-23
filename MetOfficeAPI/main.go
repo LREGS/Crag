@@ -45,7 +45,7 @@ func main() {
 	router := http.NewServeMux()
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data, err := store.GetForecastTotals()
+		data, err := store.GetTotals()
 		if err != nil {
 			log.Fatal("failed to get data %s", err)
 		}

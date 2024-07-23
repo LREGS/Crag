@@ -22,21 +22,8 @@ func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
 
 func (m *MetStore) Totals(ctx context.Context, name string, payload ForecastPayload) error {
 
-	// clear cache before every store as we only care about the last hours results
-	if err := m.Flush(); err != nil {
-		log.Printf("couldn't update cache because of error whilst flushing %s", err)
-		return err
-	}
-
-	//	is it better to split the storage like this from a single payload or should it be independant
-	// data, err := json.Marshal(payload.ForecastTotals)
-	// if err != nil {
-	// 	log.Printf("failed marshalling %s", err)
-	// 	return err
-	// }
-
-	// windows, err := json.Marshal(payload.Windows)
-	// if err != nil {
+	// if err := m.Flush(); err != nil {
+	// 	log.Printf("couldn't update cache because of error whilst flushing %s", err)
 	// 	return err
 	// }
 
@@ -44,21 +31,6 @@ func (m *MetStore) Totals(ctx context.Context, name string, payload ForecastPayl
 	if err != nil {
 		return err
 	}
-
-	// if err := m.Rdb.Set(ctx, "LastUpdated", time.Now().String(), 0).Err(); err != nil {
-	// 	log.Printf("error storing last updated %s", err)
-	// 	return err
-	// }
-
-	// if err := m.Rdb.Set(ctx, "totals", data, 0).Err(); err != nil {
-	// 	log.Printf("error storing totals %s", err)
-	// 	return err
-	// }
-
-	// if err := m.Rdb.Set(ctx, "windows", windows, 0).Err(); err != nil {
-	// 	log.Printf("failed storing windows %s", err)
-	// 	return err
-	// }
 
 	if err := m.Rdb.Set(ctx, name, p, 0).Err(); err != nil {
 		log.Printf("failed storing payload %s", err)
@@ -80,7 +52,7 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) GetForecastTotals() (map[string]*ForecastTotals, error) {
+func (m *MetStore) GetTotals() (map[string]*ForecastTotals, error) {
 
 	var totals map[string]*ForecastTotals
 

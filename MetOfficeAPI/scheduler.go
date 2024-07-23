@@ -7,51 +7,13 @@ import (
 	"time"
 )
 
+// im wondering if this whole thing should just be a go routine in a neverending loop
+// that sends data to a channel.
+// When the loop starts it should check last update, create a ticker based on this
+// and then call the update function . - or maybe this is handled by watching the channel
+
 type Scheduler struct {
 	timer *time.Timer
-}
-
-const intervalPeriod time.Duration = 1 * time.Hour
-
-func (s *Scheduler) Update(log *log.Logger, lastUpdated time.Time) {
-
-	var nextTick time.Time
-
-	log.Println("Starting scheduler")
-
-	if time.Since(lastUpdated).Hours() > 1.00 {
-		log.Println("starting update immediately")
-		nextTick = time.Now()
-	} else {
-		nextTick = lastUpdated.Truncate(time.Hour).Add(time.Hour)
-	}
-
-	if !nextTick.After(time.Now()) {
-		nextTick = nextTick.Add(intervalPeriod)
-	}
-
-	diff := time.Until(nextTick)
-	log.Println(diff)
-	if s.timer == nil {
-		s.timer = time.NewTimer(0)
-		return
-	} else {
-		s.timer.Reset(diff)
-	}
-
-}
-
-func (s *Scheduler) startSchedule(log *log.Logger, metAPI *MetOfficeAPI, store *MetStore, lastUpdate time.Time) {
-
-	log.Println("checking reschedule")
-
-	s.Update(log, lastUpdate)
-	for {
-		<-s.timer.C
-		lastUpdate := s.ExecuteRefreshProcess(log, metAPI, store)
-		s.Update(log, lastUpdate)
-
-	}
 }
 
 func (s *Scheduler) ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, store *MetStore) time.Time {
