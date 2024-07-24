@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -13,13 +12,14 @@ import (
 const baseHourlyURL string = "https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?"
 
 type MetOfficeAPI struct {
+	log     *log.Logger
 	BaseURL string
 	APIKey  string
 	Client  http.Client
 }
 
-func NewMetAPI(apikey string) *MetOfficeAPI {
-	return &MetOfficeAPI{BaseURL: baseHourlyURL, APIKey: apikey, Client: http.Client{}}
+func NewMetAPI(apikey string, log *log.Logger) *MetOfficeAPI {
+	return &MetOfficeAPI{log: log, BaseURL: baseHourlyURL, APIKey: apikey, Client: http.Client{}}
 }
 
 // returns the forecast for a crag based on its stored coords
@@ -34,12 +34,6 @@ func (mAPI *MetOfficeAPI) GetForecast(coords []float64) (Forecast, error) {
 	var forecast Forecast
 
 	url := mAPI.BaseURL + fmt.Sprintf("latitude=%f&longitude=%f", coords[0], coords[1])
-
-	//TODO: need this back online
-
-	// if err := godotenv.Load(); err != nil {
-	// 	return forecast, err
-	// }
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -64,22 +58,9 @@ func (mAPI *MetOfficeAPI) GetForecast(coords []float64) (Forecast, error) {
 		return forecast, fmt.Errorf("code %d", res.StatusCode)
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return forecast, err
-
-	}
-
-	err = json.Unmarshal(body, &forecast)
-	if err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&forecast); err != nil {
 		return forecast, err
 	}
-
-	// defer res.Body.Close()
-	// err = json.NewDecoder(res.Body).Decode(&forecast)
-	// if err != nil {
-	// 	return forecast, err
-	// }
 
 	return forecast, nil
 
@@ -212,3 +193,5 @@ func (mAPI *MetOfficeAPI) FindWindows(log *log.Logger, forecast Forecast) [][]ti
 
 	return windows
 }
+
+// TODO: Add track previous potential windows, to somehow examine likelihood of when certain place could be dry based on previous weather

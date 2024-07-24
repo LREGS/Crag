@@ -12,10 +12,12 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// better di for log pls
+
 //some of the names aren't very idiomatic - I know its a metX because this is the met package
 
 func main() {
-
+	// loger??????
 	loger := NewLogger("log.txt")
 
 	loger.Println("started")
@@ -30,15 +32,16 @@ func main() {
 		DB:       0,
 	})
 
-	scheduler := Scheduler{}
+	// scheduler := Scheduler{}
 
-	api := NewMetAPI(os.Getenv("apikey"))
+	api := NewMetAPI(os.Getenv("apikey"), loger)
 	store := NewMetStore(rc, loger)
 
 	// at the moment the scheduler is starting from every hour from the time the app is started.
 	// it needs to be an hour from when it was last updated
 
-	go scheduler.startSchedule(loger, api, store, time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC))
+	// go scheduler.startSchedule(loger, api, store, time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC))
+	go ScheduleMetOffice(loger, api, store)
 
 	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
 

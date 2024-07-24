@@ -88,7 +88,7 @@ func (m *MetStore) GetLastUpdate(log *log.Logger) (time.Time, error) {
 }
 
 func (m *MetStore) SetLastUpdatedNow() error {
-	if err := m.Rdb.Set(context.Background(), "LastUpdated", time.Now().String(), 0).Err(); err != nil {
+	if err := m.Rdb.Set(context.Background(), "LastUpdated", time.Now().Format("2006-01-02T15:04Z07:00"), 0).Err(); err != nil {
 		log.Printf("error storing last updated %s", err)
 		return err
 	}
