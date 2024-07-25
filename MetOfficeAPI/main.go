@@ -50,7 +50,7 @@ func main() {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		data, err := store.GetTotals()
 		if err != nil {
-			log.Fatal("failed to get data %s", err)
+			log.Fatalf("failed to get data %s", err)
 		}
 
 		if err := tmpl.ExecuteTemplate(w, "main", *data["17"]); err != nil {

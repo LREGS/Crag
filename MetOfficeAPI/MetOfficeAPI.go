@@ -30,10 +30,13 @@ func NewMetAPI(apikey string, log *log.Logger) *MetOfficeAPI {
 
 // either way this returns the hourly forecast for a 72hour period from the met office data hub api.
 // the forecast is updated hourly.
-func (mAPI *MetOfficeAPI) GetForecast(coords []float64) (Forecast, error) {
+func (mAPI *MetOfficeAPI) GetForecast(url string) (Forecast, error) {
+
+	// we dont want to be building the url in this function  and its a little sticky
+
 	var forecast Forecast
 
-	url := mAPI.BaseURL + fmt.Sprintf("latitude=%f&longitude=%f", coords[0], coords[1])
+	// url := mAPI.BaseURL + fmt.Sprintf("latitude=%f&longitude=%f", coords[0], coords[1])
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -63,6 +66,11 @@ func (mAPI *MetOfficeAPI) GetForecast(coords []float64) (Forecast, error) {
 	}
 
 	return forecast, nil
+
+}
+
+func (mAPI *MetOfficeAPI) CreateURL(coords []float64) string {
+	return fmt.Sprintf("%slatitude=%f&longitude=%f", mAPI.BaseURL, coords[0], coords[1])
 
 }
 

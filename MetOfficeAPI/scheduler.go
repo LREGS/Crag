@@ -94,7 +94,7 @@ func (s *Scheduler) ExecuteRefreshProcess(log *log.Logger, api *MetOfficeAPI, st
 		go func(crag Crag) {
 
 			log.Printf("go %s route started", crag.Name)
-			f, err := api.GetForecast([]float64{crag.Latitude, crag.Longitude})
+			f, err := api.GetForecast(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
 			if err != nil {
 				return
 			}
@@ -195,7 +195,7 @@ func updater(log *log.Logger, api *MetOfficeAPI, store *MetStore) {
 		go func(crag Crag) {
 
 			log.Printf("go %s route started", crag.Name)
-			f, err := api.GetForecast([]float64{crag.Latitude, crag.Longitude})
+			f, err := api.GetForecast(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
 			if err != nil {
 				return
 			}
@@ -204,7 +204,7 @@ func updater(log *log.Logger, api *MetOfficeAPI, store *MetStore) {
 				log.Printf("failed creating payload %s", err)
 			}
 
-			// I'm wondering if these should maybe be added to a channel and stored seperately
+			// this shouldn't be in the same function
 
 			if err := store.Totals(context.Background(), crag.Name, p); err != nil {
 				log.Printf("failed storing forecast totals, %s", err)
