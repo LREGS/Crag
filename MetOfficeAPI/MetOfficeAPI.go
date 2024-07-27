@@ -4,35 +4,61 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
 )
 
+// type MetOfficeAPI interface{
+
+// }
+
 const baseHourlyURL string = "https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?"
+
+type api interface {
+	MakeAPICall(url string, headers http.Header) ([]byte, error)
+}
+
+type Mapi struct {
+	client http.Client
+}
+
+func (a *Mapi) MakeAPICall(url string, header http.Header) ([]byte, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := a.client.Do(req)
+	if err != nil {
+		return nil, err
+
+	}
+
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+
+}
 
 type MetOfficeAPI struct {
 	log     *log.Logger
 	BaseURL string
 	APIKey  string
 	Client  http.Client
+	Mapi
 }
 
 func NewMetAPI(apikey string, log *log.Logger) *MetOfficeAPI {
 	return &MetOfficeAPI{log: log, BaseURL: baseHourlyURL, APIKey: apikey, Client: http.Client{}}
 }
 
-// returns the forecast for a crag based on its stored coords
-// eventually this needs to be called for all coords in the db so we can track x amount of crags and display
-// the weather windwows for each crag each hour and how they're changing
-// would we maybe want that as a feature of the struct? or would we just want something else controlling that and calling these
-// methods based on the avaialble coords
-
-// either way this returns the hourly forecast for a 72hour period from the met office data hub api.
-// the forecast is updated hourly.
+// Returns the hourly forecast for a 72hour period from the met office data hub api, hourly
 func (mAPI *MetOfficeAPI) GetForecast(url string) (Forecast, error) {
-
-	// we dont want to be building the url in this function  and its a little sticky
 
 	var forecast Forecast
 
@@ -71,7 +97,14 @@ func (mAPI *MetOfficeAPI) GetForecast(url string) (Forecast, error) {
 
 func (mAPI *MetOfficeAPI) CreateURL(coords []float64) string {
 	return fmt.Sprintf("%slatitude=%f&longitude=%f", mAPI.BaseURL, coords[0], coords[1])
+}
 
+func (mAPI *MetOfficeAPI) GetHeaders() http.Header {
+	return http.Header{
+
+		"apikey": {mAPI.APIKey},
+		"accept": {"application/json"},
+	}
 }
 
 func (mAPI *MetOfficeAPI) GetPayload(log *log.Logger, forecast Forecast) (ForecastPayload, error) {

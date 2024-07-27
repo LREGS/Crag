@@ -32,6 +32,9 @@ func TestGetForecast(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
+			t.Logf("running %s", tc.name)
+
 			testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tc.code)
 				_, err := w.Write(tc.body)
@@ -49,18 +52,18 @@ func TestGetForecast(t *testing.T) {
 
 			res, err := api.GetForecast(api.BaseURL)
 			if err != nil {
-				t.Fatalf("get forecast failed %s", err)
+				assert.Equal(t, "code 500", err.Error())
+				assert.Equal(t, Forecast{}, res)
 			}
 
-			var testData Forecast
-			if err := json.Unmarshal(tc.body, &testData); err != nil {
-				t.Fatalf("failed decoding test data %s", err)
-			}
+			if tc.code != 500 {
 
-			if tc.code == 500 {
-				return
+				var testData Forecast
+				if err := json.Unmarshal(tc.body, &testData); err != nil {
+					t.Fatalf("failed decoding test data %s", err)
+				}
+				assert.Equal(t, testData, res)
 			}
-			assert.Equal(t, testData, res)
 
 		})
 	}
