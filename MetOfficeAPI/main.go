@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/semaphore"
 )
 
 // better di for log pls
@@ -17,10 +19,7 @@ import (
 //some of the names aren't very idiomatic - I know its a metX because this is the met package
 
 func main() {
-	// loger??????
-	loger := NewLogger("log.txt")
-
-	loger.Println("started")
+	log := NewLogger("log.txt")
 
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalf("couldn't load environment variables")
@@ -32,23 +31,26 @@ func main() {
 		DB:       0,
 	})
 
-	// scheduler := Scheduler{}
+	api := NewMetAPI(os.Getenv("apikey"), log)
+	store := NewMetStore(rc, log)
 
-	api := NewMetAPI(os.Getenv("apikey"), loger)
-	store := NewMetStore(rc, loger)
+	ctx := context.Background()
+	errs := make(chan error, 1)
+	go UpdateForecasts(ctx, store.GetLastUpdate(), api, store, errs)
 
-	// at the moment the scheduler is starting from every hour from the time the app is started.
-	// it needs to be an hour from when it was last updated
-
-	// go scheduler.startSchedule(loger, api, store, time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC))
-	go ScheduleMetOffice(loger, api, store)
+	select {
+	case err := <-errs:
+		log.Print(err)
+	default:
+		log.Print("no err in ch")
+	}
 
 	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
 
 	router := http.NewServeMux()
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data, err := store.GetTotals()
+		data, err := store.Get()
 		if err != nil {
 			log.Fatalf("failed to get data %s", err)
 		}
@@ -74,8 +76,64 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-type forecastMutex struct {
-	mu sync.Mutex
-	//sorted by crag name and complete forecast
-	forecastResults map[string]Forecast
+func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api *MetOfficeAPI, store *MetStore, errs chan<- error) error {
+
+	log.Print("updating")
+	var sem = semaphore.NewWeighted(int64(api.ratelimiter.Limit() * 0.8))
+	wg := sync.WaitGroup{}
+
+	for {
+		if time.Since(lastUpdate) > time.Hour {
+			for _, crag := range crags {
+				log.Print(crag)
+				wg.Add(1)
+				if err := sem.Acquire(ctx, 1); err != nil {
+					errs <- err
+				}
+				go func() {
+					f, err := api.GetForecast(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
+					log.Print(f)
+					if err != nil {
+						errs <- err
+					}
+					log.Print("adding payload")
+					p, err := api.GetPayload(f)
+					if err != nil {
+						errs <- err
+					}
+					log.Print("adding to store")
+					if err := store.Add(ctx, crag.Name, p); err != nil {
+						errs <- err
+					}
+					wg.Done()
+				}()
+			}
+		} else {
+			c := time.Tick(time.Duration(60-(time.Now().Minute())) * time.Minute)
+			log.Print(c)
+			for _ = range c {
+				continue
+			}
+		}
+
+	}
+
+}
+
+var crags = []Crag{
+	{"cromlech", 53.08977582752912, -4.0494354521953895},
+	{"beddgelert", 53.01401346937128, -4.1086367318613055},
+	{"gwynant", 53.04567339439013, -4.021447439922229},
+	{"blaenau", 52.99729599359651, -3.9578734953238475},
+	{"crafnant", 52.99729599359651, -3.9578734953238475},
+	{"cwellyn", 53.07568570139747, -4.148701296939546},
+	{"orme", 53.33236585445307, -3.8311890286450865},
+	{"Penmaenbach", 53.285, -3.8684},
+	{"ysgo", 52.80614677538971, -4.656639551730091},
+	{"tremadoch", 52.94008535336955, -4.140997768369204},
+	{"rhiwGoch", 53.09199013529737, -3.803795346023221},
+	{"portland", 50.545900401402854, -2.438814867485551},
+	{"cuckooRock", 50.545900401402854, -2.438814867485551},
+	{"MountSionEast", 50.545900401402854, -2.438814867485551},
+	{"Froggatt", 53.2942103060766, -1.6201285054945418},
 }

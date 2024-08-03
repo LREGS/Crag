@@ -1,14 +1,31 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+type MockStore struct {
+}
+
+func (s *MockStore) Add(ctx context.Context, name string, payload ForecastPayload) error {
+	return nil
+}
+
+func (s *MockStore) Get() (map[string]*ForecastTotals, error) {
+	return nil, nil
+}
+
+func GetLastUpdate() time.Time {
+	return time.Time{}
+}
 
 func TestGetForecast(t *testing.T) {
 	t.Parallel()
@@ -68,6 +85,36 @@ func TestGetForecast(t *testing.T) {
 		})
 	}
 }
+
+// func TestScheduleMetOffice(t *testing.T) {
+
+// 	cases := []struct {
+// 		name string
+// 		t    time.Time
+// 	}{
+// 		{
+// 			name: "Time Now",
+// 			t:    time.Now(),
+// 		},
+// 		{
+// 			name: "Immediate update required",
+// 			t:    time.Now().Add(-2 * time.Hour),
+// 		},
+// 	}
+
+// 	for _, tc := range cases {
+// 		t.Run(tc.name, func(t *testing.T) {
+
+// 			log := NewLogger("testLog")
+// 			t.Log("started")
+// 			api := NewMetAPI(os.Getenv("apikey"), log)
+
+// 			api.ScheduleMetOffice(tc.t)
+
+// 		})
+// 	}
+
+// }
 
 func GetTestForecast(t *testing.T) []byte {
 	t.Helper()

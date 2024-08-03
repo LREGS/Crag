@@ -10,17 +10,22 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type Store interface {
+	Add(ctx context.Context, name string, payload ForecastPayload) error
+	Get() (map[string]*ForecastTotals, error)
+	GetLastUpdate() time.Time
+}
+
 type MetStore struct {
-	Log       *log.Logger
-	Rdb       *redis.Client //Redis Database
-	scheduler *Scheduler
+	Log *log.Logger
+	Rdb *redis.Client //Redis Database
 }
 
 func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
 	return &MetStore{Log: log, Rdb: rdb}
 }
 
-func (m *MetStore) Totals(ctx context.Context, name string, payload ForecastPayload) error {
+func (m *MetStore) Add(ctx context.Context, name string, payload ForecastPayload) error {
 
 	// if err := m.Flush(); err != nil {
 	// 	log.Printf("couldn't update cache because of error whilst flushing %s", err)
@@ -34,6 +39,11 @@ func (m *MetStore) Totals(ctx context.Context, name string, payload ForecastPayl
 
 	if err := m.Rdb.Set(ctx, name, p, 0).Err(); err != nil {
 		log.Printf("failed storing payload %s", err)
+		return err
+	}
+
+	if err = m.SetLastUpdatedNow(); err != nil {
+		log.Printf("failed setting LastUpdated %s", err)
 		return err
 	}
 
@@ -52,7 +62,7 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) GetTotals() (map[string]*ForecastTotals, error) {
+func (m *MetStore) Get() (map[string]*ForecastTotals, error) {
 
 	var totals map[string]*ForecastTotals
 
@@ -68,23 +78,25 @@ func (m *MetStore) GetTotals() (map[string]*ForecastTotals, error) {
 	return totals, nil
 }
 
-func (m *MetStore) GetLastUpdate(log *log.Logger) (time.Time, error) {
+func (m *MetStore) GetLastUpdate() time.Time {
 	res, err := m.Rdb.Get(context.Background(), "LastUpdated").Result()
-	if err == redis.Nil {
-		log.Printf("last update failed: no entry exists %s", err)
-		return time.Time{}, ErrorRedis
-	}
+	// if err == redis.Nil {
+	// 	log.Printf("last update failed: no entry exists %s", err)
+	// 	// return time.Time{}, ErrorRedis
+	// }
 	if err != nil {
 		log.Printf("failed getting last update from redis %s", err)
-		return time.Time{}, err
+		return time.Now().Add(-2 * time.Hour)
 	}
 
 	parsedTime, err := time.Parse("2006-01-02T15:04Z07:00", res)
 	if err != nil {
-		return time.Time{}, err
+		log.Printf("failed parsing time %s", err)
+		// return time.Time{}, err
+		return time.Time{}
 	}
 
-	return parsedTime, nil
+	return parsedTime
 }
 
 func (m *MetStore) SetLastUpdatedNow() error {
