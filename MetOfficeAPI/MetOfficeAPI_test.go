@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -86,35 +87,114 @@ func TestGetForecast(t *testing.T) {
 	}
 }
 
-// func TestScheduleMetOffice(t *testing.T) {
+func TestMakeURL(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name     string
+		coords   []float64
+		baseKey  string
+		expected string
+	}{
+		{
+			name:     "correct",
+			coords:   []float64{53.04567339439013, -4.021447439922229},
+			baseKey:  "string",
+			expected: fmt.Sprintf("https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude=53.04567339439013longitude=-4.021447439922229"),
+		},
+	}
 
-// 	cases := []struct {
-// 		name string
-// 		t    time.Time
-// 	}{
-// 		{
-// 			name: "Time Now",
-// 			t:    time.Now(),
-// 		},
-// 		{
-// 			name: "Immediate update required",
-// 			t:    time.Now().Add(-2 * time.Hour),
-// 		},
-// 	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			log := NewLogger("testLog.txt")
+			api := NewMetAPI(tc.baseKey, log)
 
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, api.CreateURL(tc.coords))
 
-// 			log := NewLogger("testLog")
-// 			t.Log("started")
-// 			api := NewMetAPI(os.Getenv("apikey"), log)
+		})
+	}
+}
 
-// 			api.ScheduleMetOffice(tc.t)
+func TestCalculateTotals(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name          string
+		TestData      []TimeSeriesData
+		expectedAvg   map[string]*ForecastTotals
+		expectedError bool
+	}{
+		{
+			name: "Valid Data",
+			TestData: []TimeSeriesData{
+				{
+					Time:              "2024-08-05T00:00Z",
+					ScreenTemperature: 20.5,
+					MaxScreenAirTemp:  25.0,
+					MinScreenAirTemp:  15.0,
+					TotalPrecipAmount: 1.5,
+				},
+				{
+					Time:              "2024-08-05T01:00Z",
+					ScreenTemperature: 19.5,
+					MaxScreenAirTemp:  25.0,
+					MinScreenAirTemp:  15.0,
+					TotalPrecipAmount: 0.5,
+				},
+				{
+					Time:              "2024-08-05T02:00Z",
+					ScreenTemperature: 18.5,
+					MaxScreenAirTemp:  25.0,
+					MinScreenAirTemp:  15.0,
+					TotalPrecipAmount: 0.0,
+				},
+				{
+					Time:              "2024-08-06T00:00Z",
+					ScreenTemperature: 21.0,
+					MaxScreenAirTemp:  26.0,
+					MinScreenAirTemp:  16.0,
+					TotalPrecipAmount: 0.2,
+				},
+			},
 
-// 		})
-// 	}
+			expectedAvg: map[string]*ForecastTotals{
+				"05": {
+					HighestTemp: 25.0,
+					LowestTemp:  15.0,
+					AvgTemp:     19.5,
+					TotalPrecip: 2.0,
+					Datapoints:  3,
+				},
+				"06": {
+					HighestTemp: 26.0,
+					LowestTemp:  16.0,
+					AvgTemp:     21.0,
+					TotalPrecip: 0.2,
+					Datapoints:  1,
+				},
+			},
+			expectedError: false,
+		},
+		// {
+		// 	name:          "incorrect Data",
+		// 	TestData:      []TimeSeriesData{},
+		// 	expectedAvg:   nil,
+		// 	expectedError: true,
+		// },
+	}
 
-// }
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			log := NewLogger("tLog.txt")
+			api := NewMetAPI(" ", log)
+
+			d := api.CalculateTotals(tc.TestData)
+			t.Logf("%s %v", tc.name, d)
+			assert.Equal(t, tc.expectedAvg, d)
+
+		})
+	}
+}
 
 func GetTestForecast(t *testing.T) []byte {
 	t.Helper()

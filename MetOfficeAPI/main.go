@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -13,10 +14,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/semaphore"
 )
-
-// better di for log pls
-
-//some of the names aren't very idiomatic - I know its a metX because this is the met package
 
 func main() {
 	log := NewLogger("log.txt")
@@ -41,8 +38,6 @@ func main() {
 	select {
 	case err := <-errs:
 		log.Print(err)
-	default:
-		log.Print("no err in ch")
 	}
 
 	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
@@ -88,22 +83,36 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api *MetOfficeAP
 				log.Print(crag)
 				wg.Add(1)
 				if err := sem.Acquire(ctx, 1); err != nil {
+					log.Print(err)
 					errs <- err
 				}
 				go func() {
+					log.Print(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
+					// DO i want to store these or make them as I am?
 					f, err := api.GetForecast(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
 					log.Print(f)
 					if err != nil {
+						log.Print(err)
 						errs <- err
+
 					}
-					log.Print("adding payload")
-					p, err := api.GetPayload(f)
-					if err != nil {
-						errs <- err
+					// log.Print("adding payload")
+					// p, err := api.GetPayload(f.Features[0].Properties.ModelRunDate, f.Features[0].Properties.TimeSeries)
+					// if err != nil {
+					// 	errs <- err
+					// }
+
+					if len(f.Features[0].Properties.TimeSeries) == 0 {
+						log.Print("forecast empty")
+						errs <- errors.New("forecast time series data is empty")
+
 					}
 					log.Print("adding to store")
-					if err := store.Add(ctx, crag.Name, p); err != nil {
+					if err := store.Add(ctx, crag.Name,
+						ForecastPayload{LastModelRunTime: f.Features[0].Properties.ModelRunDate, ForecastTotals: api.CalculateTotals(f.Features[0].Properties.TimeSeries)}); err != nil {
+						log.Print(err)
 						errs <- err
+
 					}
 					wg.Done()
 				}()

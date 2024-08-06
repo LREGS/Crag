@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	rate "golang.org/x/time/rate"
@@ -90,7 +91,14 @@ func (mAPI *MetOfficeAPI) GetForecast(url string) (Forecast, error) {
 }
 
 func (mAPI *MetOfficeAPI) CreateURL(coords []float64) string {
-	return fmt.Sprintf("%slatitude=%f&longitude=%f", mAPI.BaseURL, coords[0], coords[1])
+	// I probbaly just want to store the urls with the crag information that way I only need to create them once
+	var sb strings.Builder
+	sb.WriteString(mAPI.BaseURL)
+	sb.WriteString("latitude=")
+	sb.WriteString(strconv.FormatFloat(coords[0], 'f', -1, 64))
+	sb.WriteString("longitude=")
+	sb.WriteString(strconv.FormatFloat(coords[1], 'f', -1, 64))
+	return sb.String()
 }
 
 func (mAPI *MetOfficeAPI) GetHeaders() http.Header {
@@ -101,56 +109,39 @@ func (mAPI *MetOfficeAPI) GetHeaders() http.Header {
 	}
 }
 
-func (mAPI *MetOfficeAPI) GetPayload(forecast Forecast) (ForecastPayload, error) {
+func (mAPI *MetOfficeAPI) CalculateTotals(data []TimeSeriesData) map[string]*ForecastTotals {
 
-	//1 hourly spot has three days worth of data. This function provides the totals for
-	//all three days
-
-	data := forecast.Features[0].Properties.TimeSeries
-
-	if len(data) == 0 {
-		return ForecastPayload{}, errors.New("Forecast provided is empty")
-	}
-
-	totals := map[string]*ForecastTotals{}
-
-	//we can try and calculate a running average using the mean calculator and then adding that value as the avg instead of current
-	//clumsyness
+	var totals = make(map[string]*ForecastTotals)
 
 	for _, val := range data {
-
-		_, ok := totals[val.Time[8:10]]
+		day := val.Time[8:10]
+		entry, ok := totals[day]
 		if !ok {
-			totals[val.Time[8:10]] = &ForecastTotals{}
-			entry := totals[val.Time[8:10]]
-			entry.AvgTemp += val.ScreenTemperature
-			entry.AvgWindSpeed += val.WindSpeed10m
-			entry.HighestTemp = val.MaxScreenAirTemp
-			entry.LowestTemp = val.MinScreenAirTemp
-			//this is just assiging it as the first given value
-			entry.WindDirection = val.WindDirectionFrom10m
-			entry.TotalPrecip += val.TotalPrecipAmount
-		} else {
-			entry := totals[val.Time[8:10]]
-			entry.AvgTemp += val.ScreenTemperature
-			entry.AvgWindSpeed += val.WindSpeed10m
-			entry.TotalPrecip += val.TotalPrecipAmount
+			entry = &ForecastTotals{
+				HighestTemp: val.MaxScreenAirTemp,
+				LowestTemp:  val.MinScreenAirTemp,
+				Datapoints:  0,
+			}
+			totals[day] = entry
 		}
 
+		entry.AvgTemp += val.ScreenTemperature
+		entry.AvgWindSpeed += val.WindSpeed10m
+		entry.TotalPrecip += val.TotalPrecipAmount
+		entry.Datapoints++
 	}
 
-	for day, entry := range totals {
-		entry.AvgTemp = float64((entry.AvgTemp / float64((len(data) / 3))))
-		entry.AvgWindSpeed = float64((entry.AvgWindSpeed / float64((len(data) / 3))))
-		totals[day] = entry
+	for _, entry := range totals {
+		if entry.Datapoints > 0 {
+			entry.AvgTemp /= float64(entry.Datapoints)
+			entry.AvgWindSpeed /= float64(entry.Datapoints)
 
+		}
 	}
-
-	return ForecastPayload{LastModelRunTime: forecast.Features[0].Properties.ModelRunDate, ForecastTotals: totals, Windows: mAPI.FindWindows(forecast)}, nil
-
+	return totals
 }
 
-func (mAPI *MetOfficeAPI) FindWindows(forecast Forecast) [][]time.Time {
+func (mAPI *MetOfficeAPI) FindWindows(data []TimeSeriesData) [][]time.Time {
 
 	//probably should be returning and handling our errors in this
 
@@ -158,9 +149,9 @@ func (mAPI *MetOfficeAPI) FindWindows(forecast Forecast) [][]time.Time {
 	var endOfWindow string
 
 	windows := [][]time.Time{}
-	for i := 0; i < len(forecast.Features[0].Properties.TimeSeries); i++ {
+	for i := 0; i < len(data); i++ {
 
-		currForecast := forecast.Features[0].Properties.TimeSeries[i]
+		currForecast := data[i]
 
 		if currForecast.TotalPrecipAmount != 0.00 {
 			if startOfWindow != "" {
@@ -189,9 +180,9 @@ func (mAPI *MetOfficeAPI) FindWindows(forecast Forecast) [][]time.Time {
 			startOfWindow = currForecast.Time
 		}
 
-		if i == (len(forecast.Features[0].Properties.TimeSeries) - 1) {
+		if i == (len(data) - 1) {
 			if currForecast.TotalPrecipAmount != 0.00 && startOfWindow != "" {
-				endOfWindow = forecast.Features[0].Properties.TimeSeries[i-1].Time
+				endOfWindow = data[i-1].Time
 				startTime, err := Str2Time(startOfWindow)
 				if err != nil {
 					log.Printf("faield converting start string %s", err)
@@ -206,7 +197,7 @@ func (mAPI *MetOfficeAPI) FindWindows(forecast Forecast) [][]time.Time {
 			}
 
 			if startOfWindow != "" {
-				endOfWindow = forecast.Features[0].Properties.TimeSeries[i-1].Time
+				endOfWindow = data[i-1].Time
 				startTime, err := Str2Time(startOfWindow)
 				if err != nil {
 					log.Printf("faield converting start string %s", err)

@@ -50,12 +50,12 @@ type Forecast struct {
 }
 
 type ForecastTotals struct {
-	HighestTemp   float64
-	LowestTemp    float64
-	AvgTemp       float64
-	AvgWindSpeed  float64
-	WindDirection int
-	TotalPrecip   float64
+	HighestTemp  float64
+	LowestTemp   float64
+	AvgTemp      float64
+	AvgWindSpeed float64
+	TotalPrecip  float64
+	Datapoints   int
 }
 
 // A window is a gap in precipitation of more than 1hour and gives the amount of rain the area has just experienced.
