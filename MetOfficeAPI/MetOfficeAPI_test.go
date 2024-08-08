@@ -224,13 +224,38 @@ func TestFindWindows(t *testing.T) {
 				},
 			},
 			expected: [][]time.Time{
-				{time.Date(2024, 8, 5, 1, 0, 0, 0, time.UTC), time.Date(2024, 8, 5, 2, 0, 0, 0, time.UTC)},
+				{time.Date(2024, 8, 5, 1, 0, 0, 0, time.UTC), time.Date(2024, 8, 5, 3, 0, 0, 0, time.UTC)},
+			},
+		},
+		{
+			name: "hour before last",
+			data: []TimeSeriesData{
+				{
+					Time:              "2024-08-05T00:00Z",
+					TotalPrecipAmount: 1.0,
+				},
+				{
+					Time:              "2024-08-05T01:00Z",
+					TotalPrecipAmount: 1.0,
+				},
+				{
+					Time:              "2024-08-05T02:00Z",
+					TotalPrecipAmount: 0.0,
+				},
+				{
+					Time:              "2024-08-05T03:00Z",
+					TotalPrecipAmount: 1.0,
+				},
+			},
+			expected: [][]time.Time{
+				{time.Date(2024, 8, 5, 2, 0, 0, 0, time.UTC), time.Date(2024, 8, 5, 3, 0, 0, 0, time.UTC)},
 			},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			//please read the code there will be good edge cases to test with windows starting and end of and second last entries
 
 			log := NewLogger("tLog.txt")
 			api := NewMetAPI(" ", log)

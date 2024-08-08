@@ -36,7 +36,9 @@ func (a *Api) Call(url string, header http.Header) (*http.Response, error) {
 		return nil, err
 	}
 
-	req.Header = header
+	if req.Header != nil {
+		req.Header = header
+	}
 
 	res, err := a.client.Do(req)
 	if err != nil {

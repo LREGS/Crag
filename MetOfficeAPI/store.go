@@ -19,10 +19,11 @@ type Store interface {
 type MetStore struct {
 	Log *log.Logger
 	Rdb *redis.Client //Redis Database
+	Ctx *context.Context
 }
 
-func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
-	return &MetStore{Log: log, Rdb: rdb}
+func NewMetStore(ctx *context.Context, rdb *redis.Client, log *log.Logger) *MetStore {
+	return &MetStore{Ctx: ctx, Log: log, Rdb: rdb}
 }
 
 func (m *MetStore) Add(ctx context.Context, name string, payload ForecastPayload) error {
@@ -106,24 +107,3 @@ func (m *MetStore) SetLastUpdatedNow() error {
 	}
 	return nil
 }
-
-// The scheduler is not part of the Store, the same way as the api access isn't part of the store.
-// The scheduler is instead the orchestrator, which will bring together the methods of the api access
-// store methods within the met office package
-
-// func (m *MetStore) InitScheduler(lastUpdate time.Time) {
-
-// 	m.Scheduler.Update(lastUpdate)
-// 	for {
-// 		<-m.Scheduler.timer.C
-// 		if err := m.StoreForecastTotals(context.Background()); err != nil {
-// 			log.Printf("failed to store data in scheduler")
-// 		}
-// 		time, err := time.Parse("2006-01-02T15:04Z07:00", payload.LastModelRunTime)
-// 		if err != nil {
-// 			log.Printf("failed parsing time during cache update")
-// 		}
-// 		m.Scheduler.Update(time)
-
-// 	}
-// }
