@@ -19,14 +19,13 @@ type Store interface {
 type MetStore struct {
 	Log *log.Logger
 	Rdb *redis.Client //Redis Database
-	Ctx *context.Context
 }
 
-func NewMetStore(ctx *context.Context, rdb *redis.Client, log *log.Logger) *MetStore {
-	return &MetStore{Ctx: ctx, Log: log, Rdb: rdb}
+func NewMetStore(rdb *redis.Client, log *log.Logger) *MetStore {
+	return &MetStore{Log: log, Rdb: rdb}
 }
 
-func (m *MetStore) Add(ctx context.Context, name string, payload ForecastPayload) error {
+func (m *MetStore) Add(ctx context.Context, key string, payload ForecastPayload) error {
 
 	// if err := m.Flush(); err != nil {
 	// 	log.Printf("couldn't update cache because of error whilst flushing %s", err)
@@ -38,7 +37,7 @@ func (m *MetStore) Add(ctx context.Context, name string, payload ForecastPayload
 		return err
 	}
 
-	if err := m.Rdb.Set(ctx, name, p, 0).Err(); err != nil {
+	if err := m.Rdb.Set(ctx, key, p, 0).Err(); err != nil {
 		log.Printf("failed storing payload %s", err)
 		return err
 	}
