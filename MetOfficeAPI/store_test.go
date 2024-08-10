@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -70,13 +71,31 @@ func TestAdd(t *testing.T) {
 		name             string
 		payload          ForecastPayload
 		key              string
-		expectedResponse string
+		expectedResponse ForecastPayload
+		err              string
 	}{
 		{
-			name:             "valid",
-			payload:          ForecastPayload{LastModelRunTime: "10"},
-			key:              "key",
-			expectedResponse: "10",
+			// not really valid is it if half the fields are missing
+			name: "Test Valid Add",
+			payload: ForecastPayload{
+				LastModelRunTime: "10",
+				ForecastTotals:   map[string]*ForecastTotals{"1": {HighestTemp: 10.00}},
+				Windows: [][]time.Time{
+					{
+						time.Date(2022, 2, 2, 2, 2, 2, 0, time.UTC),
+					},
+				},
+			},
+			key: "key",
+			expectedResponse: ForecastPayload{
+				LastModelRunTime: "10",
+				ForecastTotals:   map[string]*ForecastTotals{"1": {HighestTemp: 10.00}},
+				Windows: [][]time.Time{
+					{
+						time.Date(2022, 2, 2, 2, 2, 2, 0, time.UTC),
+					},
+				},
+			},
 		},
 	}
 
@@ -98,7 +117,7 @@ func TestAdd(t *testing.T) {
 			t.Fatalf("failed decoding test response %s", err)
 		}
 
-		assert.Equal(t, tc.expectedResponse, testRes.LastModelRunTime)
+		assert.Equal(t, tc.expectedResponse, *testRes)
 	}
 
 }
