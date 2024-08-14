@@ -71,62 +71,103 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api *MetOfficeAPI, store *MetStore, errs chan<- error) error {
+func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, store *MetStore, errs chan<- error) error {
 
-	log.Print("updating")
-	var sem = semaphore.NewWeighted(int64(api.ratelimiter.Limit() * 0.8))
+	log.Print("Starting forecast update process")
+
+	var sem = semaphore.NewWeighted(int64(api.GetRateLimit() * 0.8))
 	wg := sync.WaitGroup{}
 
+	// This loop runs indefinitely, updating once per hour
 	for {
-		if time.Since(lastUpdate) > time.Hour {
+		// Check for context cancellation to stop the loop
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		// Only proceed if it's time for the next update (once per hour)
+		if time.Since(lastUpdate) >= time.Hour {
+			log.Print("Updating forecasts for all crags")
+
 			for _, crag := range crags {
-				log.Print(crag)
 				wg.Add(1)
+				// Acquire a semaphore slot to control the rate limit
 				if err := sem.Acquire(ctx, 1); err != nil {
 					log.Print(err)
 					errs <- err
-				}
-				go func() {
-					log.Print(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
-					// DO i want to store these or make them as I am?
-					f, err := api.GetForecast(api.CreateURL([]float64{crag.Latitude, crag.Longitude}))
-					log.Print(f)
-					if err != nil {
-						log.Print(err)
-						errs <- err
-
-					}
-					// log.Print("adding payload")
-					// p, err := api.GetPayload(f.Features[0].Properties.ModelRunDate, f.Features[0].Properties.TimeSeries)
-					// if err != nil {
-					// 	errs <- err
-					// }
-
-					if len(f.Features[0].Properties.TimeSeries) == 0 {
-						log.Print("forecast empty")
-						errs <- errors.New("forecast time series data is empty")
-
-					}
-					log.Print("adding to store")
-					if err := store.Add(ctx, crag.Name,
-						ForecastPayload{LastModelRunTime: f.Features[0].Properties.ModelRunDate, ForecastTotals: api.CalculateTotals(f.Features[0].Properties.TimeSeries)}); err != nil {
-						log.Print(err)
-						errs <- err
-
-					}
 					wg.Done()
-				}()
+					continue
+				}
+
+				// Process each crag concurrently using goroutines
+				go func(crag Crag) {
+					defer sem.Release(1) // Ensure semaphore is released
+					defer wg.Done()      // Ensure wg.Done() is called
+
+					url := api.CreateURL([]float64{crag.Latitude, crag.Longitude})
+					log.Print("Fetching forecast for: ", crag.Name, url)
+
+					// Call the API to get the forecast
+					f, err := api.GetForecast(url)
+					if err != nil {
+						log.Print("Error fetching forecast for", crag.Name, ":", err)
+						errs <- err
+						return
+					}
+
+					timeSeries := f.Features[0].Properties.TimeSeries
+					if len(timeSeries) == 0 {
+						log.Print("Forecast empty for", crag.Name)
+						errs <- errors.New("forecast time series data is empty for " + crag.Name)
+						return
+					}
+
+					// Add the forecast data to the store
+					log.Print("Storing forecast for", crag.Name)
+					if err := store.Add(ctx, crag.Name,
+						ForecastPayload{
+							LastModelRunTime: f.Features[0].Properties.ModelRunDate,
+							ForecastTotals:   api.CalculateTotals(timeSeries),
+						}); err != nil {
+						log.Print("Error storing forecast for", crag.Name, ":", err)
+						errs <- err
+					}
+				}(crag)
+			}
+
+			// Wait for all crags to be updated before proceeding
+			wg.Wait()
+
+			// Update lastUpdate to the current time
+			lastUpdate = time.Now()
+
+			// Log that the batch update is complete
+			log.Print("Batch update complete. Waiting for the next hour.")
+
+			// Wait for the next hour
+			select {
+			case <-time.After(time.Hour):
+				// Continue to the next batch after an hour
+				log.Print("Starting new batch after one hour.")
+			case <-ctx.Done():
+				// If context is canceled, exit the loop gracefully
+				return ctx.Err()
 			}
 		} else {
-			c := time.Tick(time.Duration(60-(time.Now().Minute())) * time.Minute)
-			log.Print(c)
-			for _ = range c {
-				continue
+			// If less than an hour has passed, wait for the next full hour
+			sleepDuration := time.Hour - time.Since(lastUpdate)
+			log.Printf("Waiting for the next update window in %v", sleepDuration)
+
+			select {
+			case <-time.After(sleepDuration):
+				// Proceed after waiting for the remaining time to complete the hour
+				log.Print("Resuming after waiting.")
+			case <-ctx.Done():
+				// If context is canceled, exit the loop gracefully
+				return ctx.Err()
 			}
 		}
-
 	}
-
 }
 
 var crags = []Crag{
