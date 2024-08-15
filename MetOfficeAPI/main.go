@@ -33,30 +33,42 @@ func main() {
 
 	ctx := context.Background()
 	errs := make(chan error, 1)
+	log.Print(store.GetLastUpdate())
 	go UpdateForecasts(ctx, store.GetLastUpdate(), api, store, errs)
 
-	select {
-	case err := <-errs:
-		log.Print(err)
-	}
+	// not sure if we want to handle our error this way but before we were blocking the whole app waiting
+	// for error that maybe never occured
+	go func() {
+		for {
+			select {
+			case err := <-errs:
+				if err != nil {
+					log.Print("Received error:", err)
+				}
+			}
+		}
+	}()
 
 	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
 
 	router := http.NewServeMux()
 
+	// rat a tat tat
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Print("handling")
 		data, err := store.Get()
+		log.Print(data)
 		if err != nil {
-			log.Fatalf("failed to get data %s", err)
+			log.Print("failed to get data", err)
 		}
 
-		if err := tmpl.ExecuteTemplate(w, "main", *data["17"]); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "main", data.ForecastTotals["15"]); err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
-	if err := http.ListenAndServe(":6968", router); err != nil {
+	if err := http.ListenAndServe(":8181", router); err != nil {
 		panic(err)
 	}
 
@@ -71,6 +83,7 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
+// I dont think this is correct because it needs to be updating on the hour, not an hour from when the prog was run
 func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, store *MetStore, errs chan<- error) error {
 
 	log.Print("Starting forecast update process")

@@ -62,11 +62,11 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) Get() (map[string]*ForecastTotals, error) {
+func (m *MetStore) Get() (ForecastPayload, error) {
 
-	var totals map[string]*ForecastTotals
+	var totals ForecastPayload
 
-	res, err := m.Rdb.Get(context.Background(), "totals").Bytes()
+	res, err := m.Rdb.Get(context.Background(), "orme").Bytes()
 	if err != nil {
 		return totals, err
 	}
