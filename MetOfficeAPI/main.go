@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -49,27 +48,9 @@ func main() {
 		}
 	}()
 
-	tmpl := template.Must(template.ParseFiles("./templates/main.html"))
-
-	router := http.NewServeMux()
-
-	// rat a tat tat
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Print("handling")
-		data, err := store.Get()
-		log.Print(data)
-		if err != nil {
-			log.Print("failed to get data", err)
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "main", data.ForecastTotals["15"]); err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
-
-	if err := http.ListenAndServe(":8181", router); err != nil {
-		panic(err)
+	srv := NewServer(log, store)
+	if err := http.ListenAndServe(":8181", srv); err != nil {
+		panic("failed starting server")
 	}
 
 }
@@ -83,7 +64,7 @@ func Str2Time(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-// I dont think this is correct because it needs to be updating on the hour, not an hour from when the prog was run
+// this is not correct. it needs to be updating on the hour, not an hour from when the prog was run
 func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, store *MetStore, errs chan<- error) error {
 
 	log.Print("Starting forecast update process")
@@ -98,13 +79,11 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 			return err
 		}
 
-		// Only proceed if it's time for the next update (once per hour)
 		if time.Since(lastUpdate) >= time.Hour {
 			log.Print("Updating forecasts for all crags")
 
 			for _, crag := range crags {
 				wg.Add(1)
-				// Acquire a semaphore slot to control the rate limit
 				if err := sem.Acquire(ctx, 1); err != nil {
 					log.Print(err)
 					errs <- err
@@ -112,7 +91,6 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 					continue
 				}
 
-				// Process each crag concurrently using goroutines
 				go func(crag Crag) {
 					defer sem.Release(1) // Ensure semaphore is released
 					defer wg.Done()      // Ensure wg.Done() is called
@@ -120,7 +98,6 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 					url := api.CreateURL([]float64{crag.Latitude, crag.Longitude})
 					log.Print("Fetching forecast for: ", crag.Name, url)
 
-					// Call the API to get the forecast
 					f, err := api.GetForecast(url)
 					if err != nil {
 						log.Print("Error fetching forecast for", crag.Name, ":", err)
@@ -135,7 +112,6 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 						return
 					}
 
-					// Add the forecast data to the store
 					log.Print("Storing forecast for", crag.Name)
 					if err := store.Add(ctx, crag.Name,
 						ForecastPayload{
@@ -148,35 +124,26 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 				}(crag)
 			}
 
-			// Wait for all crags to be updated before proceeding
 			wg.Wait()
 
-			// Update lastUpdate to the current time
 			lastUpdate = time.Now()
 
-			// Log that the batch update is complete
 			log.Print("Batch update complete. Waiting for the next hour.")
 
-			// Wait for the next hour
 			select {
 			case <-time.After(time.Hour):
-				// Continue to the next batch after an hour
 				log.Print("Starting new batch after one hour.")
 			case <-ctx.Done():
-				// If context is canceled, exit the loop gracefully
 				return ctx.Err()
 			}
 		} else {
-			// If less than an hour has passed, wait for the next full hour
 			sleepDuration := time.Hour - time.Since(lastUpdate)
 			log.Printf("Waiting for the next update window in %v", sleepDuration)
 
 			select {
 			case <-time.After(sleepDuration):
-				// Proceed after waiting for the remaining time to complete the hour
 				log.Print("Resuming after waiting.")
 			case <-ctx.Done():
-				// If context is canceled, exit the loop gracefully
 				return ctx.Err()
 			}
 		}

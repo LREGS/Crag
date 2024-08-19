@@ -62,11 +62,11 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) Get() (ForecastPayload, error) {
+func (m *MetStore) Get(key string) (ForecastPayload, error) {
 
 	var totals ForecastPayload
 
-	res, err := m.Rdb.Get(context.Background(), "orme").Bytes()
+	res, err := m.Rdb.Get(context.Background(), key).Bytes()
 	if err != nil {
 		return totals, err
 	}
@@ -76,6 +76,44 @@ func (m *MetStore) Get() (ForecastPayload, error) {
 	}
 
 	return totals, nil
+}
+
+func (m *MetStore) GetAll() (map[string]ForecastPayload, error) {
+
+	redisKeys := make([]string, len(crags))
+	for _, crag := range crags {
+		redisKeys = append(redisKeys, crag.Name)
+	}
+
+	vals, err := m.Rdb.MGet(context.Background(), redisKeys...).Result()
+	if err != nil {
+		m.Log.Print("failed getting all data", err)
+	}
+
+}
+
+func (m *MetStore) GetKeys() []string {
+
+	var cursor uint64
+	var allKeys []string
+	for {
+		var err error
+		var keys []string
+		keys, cursor, err = m.Rdb.Scan(context.Background(), cursor, "*", 10).Result()
+		if err != nil {
+			m.Log.Print("failed getting keys", err)
+		}
+
+		allKeys = append(allKeys, keys...)
+
+		if cursor == 0 {
+			break
+		}
+
+	}
+
+	return allKeys
+
 }
 
 func (m *MetStore) GetLastUpdate() time.Time {

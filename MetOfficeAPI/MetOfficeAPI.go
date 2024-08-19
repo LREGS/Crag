@@ -71,10 +71,12 @@ type MetOfficeAPI struct {
 
 func NewMetAPI(apikey string, log *log.Logger) *MetOfficeAPI {
 	return &MetOfficeAPI{
-		log:         log,
-		BaseURL:     baseHourlyURL,
-		APIKey:      apikey,
-		client:      NewApi(),
+		log:     log,
+		BaseURL: baseHourlyURL,
+		APIKey:  apikey,
+		client:  NewApi(),
+		// TODO: rate limited should be 320 a day, with bursts of up to 100. We can make a rate, and take from that rate every request, but replenish
+		// the rate token every interval based on 320 requests in a day.
 		ratelimiter: rate.NewLimiter(rate.Every(time.Minute/100), 100),
 	}
 }

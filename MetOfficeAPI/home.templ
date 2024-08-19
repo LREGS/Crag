@@ -1,0 +1,24 @@
+package main
+
+import "strconv"
+
+templ Page(data chan ForecastTotals) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Weather Forecast</title>
+		</head>
+		<body>
+			<h1>Weather Forecast</h1>
+			for d := range data {
+				@templ.Flush() {
+					<div>
+			
+						<p>Temperature: { strconv.FormatFloat(d.HighestTemp, 'f',  -1, 64) }°C</p>
+						<p>Condition: { strconv.FormatFloat(d.LowestTemp, 'f',  -1, 64) }</p>
+					</div>
+				}
+			}
+		</body>
+	</html>
+}
