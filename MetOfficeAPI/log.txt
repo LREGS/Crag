@@ -1,2 +1,2 @@
-[main]2024/10/13 13:12:29 main.go:36: 2024-10-13 11:12:29.827909253 +0100 BST m=-7199.904039946
-[main]2024/10/13 13:12:35 server.go:51: handling home page request
+[main]2024/10/13 13:16:07 main.go:36: 2024-10-13 13:12:00 +0100 BST
+[main]2024/10/13 13:16:17 server.go:51: handling home page request

@@ -59,12 +59,6 @@ func HomePage(log *log.Logger, store *MetStore) http.Handler {
 	},
 	)
 }
-
-// Can/should this be in some kind of service struct? - I know im mentioning this above
-// but ye maybe be better if inside some kind of service struct ot encapsulate
-// the functionality we want for our handlers inside the service struct,
-// and the servive struct worries about the store, api etc, and just serving that to our
-// handler rather than our handlers having use/access of the store itself.
 func GetStoreData(data chan<- ForecastTotals, ctx context.Context, store *MetStore) {
 	defer close(data)
 
@@ -76,7 +70,7 @@ func GetStoreData(data chan<- ForecastTotals, ctx context.Context, store *MetSto
 		if err != nil {
 			return
 		}
-		f := d.Totals["18"]
+		f := d.Totals["13"]
 		data <- *f
 	}
 }
