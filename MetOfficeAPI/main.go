@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	rc := redis.NewClient(&redis.Options{
-		Addr:     "redis-13149.c85.us-east-1-2.ec2.redns.redis-cloud.com:13149",
+		Addr:     "redis-11556.c338.eu-west-2-1.ec2.redns.redis-cloud.com:11556",
 		Password: os.Getenv("redis"),
 		DB:       0,
 	})
@@ -37,6 +38,8 @@ func main() {
 
 	// not sure if we want to handle our error this way but before we were blocking the whole app waiting
 	// for error that maybe never occured
+
+	// wtf gpt is this?
 	go func() {
 		for {
 			select {
@@ -52,6 +55,8 @@ func main() {
 	if err := http.ListenAndServe(":8181", srv); err != nil {
 		panic("failed starting server")
 	}
+
+	fmt.Println("server started and listening on localhost:8181")
 
 }
 
@@ -116,7 +121,7 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 					if err := store.Add(ctx, crag.Name,
 						ForecastPayload{
 							LastModelRunTime: f.Features[0].Properties.ModelRunDate,
-							ForecastTotals:   api.CalculateTotals(timeSeries),
+							Totals:           api.CalculateTotals(timeSeries),
 						}); err != nil {
 						log.Print("Error storing forecast for", crag.Name, ":", err)
 						errs <- err
@@ -152,18 +157,18 @@ func UpdateForecasts(ctx context.Context, lastUpdate time.Time, api MetAPI, stor
 
 var crags = []Crag{
 	{"cromlech", 53.08977582752912, -4.0494354521953895},
-	{"beddgelert", 53.01401346937128, -4.1086367318613055},
-	{"gwynant", 53.04567339439013, -4.021447439922229},
-	{"blaenau", 52.99729599359651, -3.9578734953238475},
-	{"crafnant", 52.99729599359651, -3.9578734953238475},
-	{"cwellyn", 53.07568570139747, -4.148701296939546},
-	{"orme", 53.33236585445307, -3.8311890286450865},
-	{"Penmaenbach", 53.285, -3.8684},
-	{"ysgo", 52.80614677538971, -4.656639551730091},
-	{"tremadoch", 52.94008535336955, -4.140997768369204},
-	{"rhiwGoch", 53.09199013529737, -3.803795346023221},
-	{"portland", 50.545900401402854, -2.438814867485551},
-	{"cuckooRock", 50.545900401402854, -2.438814867485551},
-	{"MountSionEast", 50.545900401402854, -2.438814867485551},
-	{"Froggatt", 53.2942103060766, -1.6201285054945418},
+	// {"beddgelert", 53.01401346937128, -4.1086367318613055},
+	// {"gwynant", 53.04567339439013, -4.021447439922229},
+	// {"blaenau", 52.99729599359651, -3.9578734953238475},
+	// {"crafnant", 52.99729599359651, -3.9578734953238475},
+	// {"cwellyn", 53.07568570139747, -4.148701296939546},
+	// {"orme", 53.33236585445307, -3.8311890286450865},
+	// {"Penmaenbach", 53.285, -3.8684},
+	// {"ysgo", 52.80614677538971, -4.656639551730091},
+	// {"tremadoch", 52.94008535336955, -4.140997768369204},
+	// {"rhiwGoch", 53.09199013529737, -3.803795346023221},
+	// {"portland", 50.545900401402854, -2.438814867485551},
+	// {"cuckooRock", 50.545900401402854, -2.438814867485551},
+	// {"MountSionEast", 50.545900401402854, -2.438814867485551},
+	// {"Froggatt", 53.2942103060766, -1.6201285054945418},
 }

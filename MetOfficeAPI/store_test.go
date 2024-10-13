@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testRdb *redis.Client
+
 func TestMain(m *testing.M) {
 
 	rdbCmd, err := startRedis()
@@ -21,11 +23,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:4420"})
+	testRdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:4420"})
 
 	code := m.Run()
 
-	rdb.Close()
+	testRdb.Close()
 	if err := stopRedis(rdbCmd); err != nil {
 		fmt.Printf("failed ending redis %s", err)
 	}
@@ -65,6 +67,7 @@ func NewClient(t *testing.T) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: "127.0.0.1:4420"})
 }
 
+// oops we never updated our test..
 func TestAdd(t *testing.T) {
 
 	cases := []struct {
@@ -79,7 +82,7 @@ func TestAdd(t *testing.T) {
 			name: "Test Valid Add",
 			payload: ForecastPayload{
 				LastModelRunTime: "10",
-				ForecastTotals:   map[string]*ForecastTotals{"1": {HighestTemp: 10.00}},
+				Totals:           map[string]*ForecastTotals{"1": &ForecastTotals{HighestTemp: 10.00}},
 				Windows: [][]time.Time{
 					{
 						time.Date(2022, 2, 2, 2, 2, 2, 0, time.UTC),
@@ -89,7 +92,7 @@ func TestAdd(t *testing.T) {
 			key: "key",
 			expectedResponse: ForecastPayload{
 				LastModelRunTime: "10",
-				ForecastTotals:   map[string]*ForecastTotals{"1": {HighestTemp: 10.00}},
+				Totals:           map[string]*ForecastTotals{"1": &ForecastTotals{HighestTemp: 10.00}},
 				Windows: [][]time.Time{
 					{
 						time.Date(2022, 2, 2, 2, 2, 2, 0, time.UTC),
@@ -99,8 +102,7 @@ func TestAdd(t *testing.T) {
 		},
 	}
 
-	rdb := NewClient(t)
-	store := NewMetStore(rdb, NewLogger("testlog.txt"))
+	store := NewMetStore(testRdb, NewLogger("testlog.txt"))
 
 	for _, tc := range cases {
 		if err := store.Add(context.Background(), tc.key, tc.payload); err != nil {
@@ -111,23 +113,37 @@ func TestAdd(t *testing.T) {
 			t.Fatalf("Failed to get from redis %s", err)
 		}
 
-		var testRes *ForecastPayload
+		var testRes ForecastPayload
 
 		if err := json.Unmarshal(res, &testRes); err != nil {
 			t.Fatalf("failed decoding test response %s", err)
 		}
 
-		assert.Equal(t, tc.expectedResponse, *testRes)
+		assert.Equal(t, tc.expectedResponse, testRes)
 	}
 
 }
 
-// cases := []struct {
-// 	name        string
-// 	expectedVal map[string]*ForecastTotals
-// }{
-// 	{
-// 		name:        "valid",
-// 		expectedVal: map[string]*ForecastTotals{"1": &ForecastTotals{HighestTemp: 10.00}},
-// 	},
+// func TestGetAll(t *testing.T) {
+
+// 	cases := []struct {
+// 		name        string
+// 		expectedVal map[string]ForecastPayload
+// 	}{
+// 		{
+// 			name: "valid",
+// 			expectedVal: map[string]ForecastPayload{
+// 				"orme": {
+// 					Totals: map[string]*ForecastTotals{
+// 						"1": {
+// 							HighestTemp: 10.00,
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 	}
+
+// 	testRdb.Set
+
 // }

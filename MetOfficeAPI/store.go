@@ -87,9 +87,22 @@ func (m *MetStore) GetAll() (map[string]ForecastPayload, error) {
 
 	vals, err := m.Rdb.MGet(context.Background(), redisKeys...).Result()
 	if err != nil {
-		m.Log.Print("failed getting all data", err)
+		m.Log.Print("failed getting all data from redis ", err)
+		return nil, err
 	}
 
+	res := make(map[string]ForecastPayload)
+	for i, val := range vals {
+		if val != nil {
+			var payload ForecastPayload
+			if err := json.Unmarshal([]byte(val.(string)), &payload); err != nil {
+				m.Log.Print("failed decoding redis response from get all ", err)
+				continue
+			}
+			res[redisKeys[i]] = payload
+		}
+	}
+	return res, nil
 }
 
 func (m *MetStore) GetKeys() []string {

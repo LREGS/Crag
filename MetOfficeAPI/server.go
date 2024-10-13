@@ -76,7 +76,7 @@ func GetStoreData(data chan<- ForecastTotals, ctx context.Context, store *MetSto
 		if err != nil {
 			return
 		}
-		f := d.ForecastTotals["18"]
+		f := d.Totals["18"]
 		data <- *f
 	}
 }

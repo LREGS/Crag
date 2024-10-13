@@ -72,7 +72,7 @@ type Window struct {
 
 type ForecastPayload struct {
 	LastModelRunTime string
-	ForecastTotals   map[string]*ForecastTotals
+	Totals           map[string]*ForecastTotals
 	Windows          [][]time.Time
 }
 
