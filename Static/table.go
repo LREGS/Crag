@@ -60,12 +60,10 @@ const (
 // do we want forecast data prep and the table builder to be two seperate things? Would simplyfy the struct and mean we only need strings
 // to be passed to the table builder and not the whole forecast
 type ForecastTable struct {
-	forecast   map[string]*ForecastTotals
-	windows    [][]time.Time
-	colData    [][]string
-	colLengths []int
-	name       string
-	table      strings.Builder
+	forecast map[string]*ForecastTotals
+	windows  [][]time.Time
+	name     string
+	table    strings.Builder
 }
 
 func NewForecastTable(name string, forecast map[string]*ForecastTotals, windows [][]time.Time) *ForecastTable {
@@ -88,7 +86,6 @@ const (
 	bottomIntersection = "┴"
 	leftIntersection   = "├"
 	rightIntersection  = "┤"
-	newLine            = "\n"
 )
 
 // longest forecast data row will define width
@@ -100,28 +97,59 @@ func (t *ForecastTable) nameBox(width int) string {
 	nameBox.WriteString(topLeftCorner)
 	nameBox.WriteString(strings.Repeat("─", (width - 2)))
 	nameBox.WriteString(topRightCorner)
-	nameBox.WriteString(newLine)
+	nameBox.WriteRune('\n')
 	nameBox.WriteString(verticalLine)
 	nameBox.WriteString(t.name)
 	nameBox.WriteString(strings.Repeat(" ", ((width - 2) - len(t.name))))
 	nameBox.WriteString(verticalLine)
-	nameBox.WriteString(newLine)
-
-	fmt.Println("name ", utf8.RuneCountInString(nameBox.String()))
+	nameBox.WriteRune('\n')
 
 	return nameBox.String()
 }
 
-func (t *ForecastTable) columns(width int) string {
+// func (t *ForecastTable) columnHeaders(columnNames []string)
 
-	completeColumn := NewLineBuilder(width)
+func (t *ForecastTable) build() {
+	// headers - physical definition of a header
 
+	t.table.Reset()
+
+	// add the name box to the table
+	t.table.WriteString(t.nameBox(width))
+
+	// this section builds and populates the headline forecast data for each crag over the days
+	columns := NewLineBuilder(width)
+	colsMap := make(map[string][]string, len(t.forecast))
+
+	//stylistacially id prefer this column data to spawn into the middle of the table somehow and not be left hand aligned
+	// as this will make the white space look a bit less jarring
+
+	columnWidths := make([]int, 4) // we want this to be able to grow as columns grow actually but we know how many columns beforehand just no magic number
+	for k, v := range t.forecast {
+		cols := []string{
+			// why dont we have a date for each row here?!
+			fmt.Sprintf(" Temp %d/%d/%d ", int(v.HighestTemp), int(v.LowestTemp), int(v.AvgTemp)),
+			fmt.Sprintf(" Total Precip %d ", int(v.TotalPrecip)),
+			fmt.Sprintf(" Wind %dmp ↓ ", int(v.AvgWindSpeed)),
+			fmt.Sprintf(" 1/2/3 "),
+		}
+		// I think this is ok or should it be outside of the other for loop
+		for i, v := range cols {
+			if columnWidths[i] < utf8.RuneCountInString(v) {
+				columnWidths[i] = utf8.RuneCountInString(v)
+			}
+		}
+		// key is date
+		colsMap[k] = cols
+	}
+
+	// top column seperator
 	topForecastRow := NewLineBuilder(width)
 	botForecastRow := NewLineBuilder(width)
 	topForecastRow.WriteString(leftIntersection)
 	botForecastRow.WriteString(leftIntersection)
-	for i, c := range t.colLengths {
-		if i != len(t.colLengths)-1 {
+	for i, c := range columnWidths {
+		if i != 3 {
 			topForecastRow.WriteString(strings.Repeat(horizontalLine, (c)))
 			topForecastRow.WriteString(topIntersection)
 			botForecastRow.WriteString(strings.Repeat(horizontalLine, (c)))
@@ -136,158 +164,35 @@ func (t *ForecastTable) columns(width int) string {
 		}
 
 	}
+	t.table.WriteString(topForecastRow.String())
+	t.newline()
 
-	fmt.Println(utf8.RuneCountInString(topForecastRow.String()), botForecastRow.String())
-
-	dataForecastRow := NewLineBuilder(width)
-	for _, v := range t.colData {
-		completeColumn.WriteString(topForecastRow.String())
-		completeColumn.WriteString(newLine)
-		dataForecastRow.WriteString(verticalLine)
+	for _, v := range colsMap {
+		columns.WriteString(verticalLine)
 		for i, c := range v {
-			if i != len(t.colData)-1 {
-				dataForecastRow.WriteString(c)
-				dataForecastRow.WriteString(strings.Repeat(" ", (t.colLengths[i] - utf8.RuneCountInString(c))))
-				dataForecastRow.WriteString(verticalLine)
+			if i != 3 {
+				columns.WriteString(c)
+				columns.WriteString(strings.Repeat(" ", (columnWidths[i] - utf8.RuneCountInString(c))))
+				columns.WriteString(verticalLine)
 
 			} else {
-				dataForecastRow.WriteString(c)
-				dataForecastRow.WriteString(verticalLine)
-				if utf8.RuneCountInString(dataForecastRow.String()) < width {
-					dataForecastRow.WriteString(strings.Repeat(" ", ((width - utf8.RuneCountInString(dataForecastRow.String())) - 1)))
+				columns.WriteString(c)
+				columns.WriteString(verticalLine)
+				if utf8.RuneCountInString(columns.String()) < width {
+					columns.WriteString(strings.Repeat(" ", ((width - utf8.RuneCountInString(columns.String())) - 1)))
 				}
 				// end of table
-				dataForecastRow.WriteString(verticalLine)
+				columns.WriteString(verticalLine)
 
-				completeColumn.WriteString(dataForecastRow.String())
-				completeColumn.WriteString(botForecastRow.String())
-				completeColumn.WriteString(newLine)
-				fmt.Println(utf8.RuneCountInString(dataForecastRow.String()))
-				dataForecastRow.Reset()
+				t.table.WriteString(columns.String())
+				t.newline()
+				t.table.WriteString(botForecastRow.String())
+				t.newline()
+				columns.Reset()
 
 			}
 		}
 	}
-
-	return completeColumn.String()
-}
-
-// func (t *ForecastTable) columnHeaders(columnNames []string)
-
-func (t *ForecastTable) parseData() {
-
-	colsMap := [][]string{}        // this needs changing but len map isnt working for some reason it wants to just be for as many forecasts as we have?
-	columnWidths := make([]int, 5) // we want this to be able to grow as columns grow actually but we know how many columns beforehand just no magic number
-	for k, v := range t.forecast {
-		cols := []string{
-			k,
-			fmt.Sprintf(" Temp %d/%d/%d ", int(v.HighestTemp), int(v.LowestTemp), int(v.AvgTemp)),
-			fmt.Sprintf(" Total Precip %d ", int(v.TotalPrecip)),
-			fmt.Sprintf(" Wind %dmp ↓ ", int(v.AvgWindSpeed)),
-			fmt.Sprintf(" 1/2/3 "),
-		}
-		// I think this is ok or should it be outside of the other for loop
-		for i, v := range cols {
-			if columnWidths[i] < utf8.RuneCountInString(v) {
-				columnWidths[i] = utf8.RuneCountInString(v)
-			}
-		}
-		// key is date
-		colsMap = append(colsMap, cols)
-	}
-	t.colData = colsMap
-	t.colLengths = columnWidths
-}
-
-func (t *ForecastTable) build() {
-	// headers - physical definition of a header
-
-	t.table.Reset()
-
-	// temp function for testing
-	t.parseData()
-	fmt.Println(t.colData, t.colLengths)
-
-	// add the name box to the table
-	t.table.WriteString(t.nameBox(width))
-	t.table.WriteString(t.columns(width))
-
-	// this section builds and populates the headline forecast data for each crag over the days
-	// columns := NewLineBuilder(width)
-	// colsMap := make(map[string][]string, len(t.forecast))
-
-	// //stylistacially id prefer this column data to spawn into the middle of the table somehow and not be left hand aligned
-	// // as this will make the white space look a bit less jarring
-
-	// columnWidths := make([]int, 4) // we want this to be able to grow as columns grow actually but we know how many columns beforehand just no magic number
-	// for k, v := range t.forecast {
-	// 	cols := []string{
-	// 		// why dont we have a date for each row here?!
-	// 		fmt.Sprintf(" Temp %d/%d/%d ", int(v.HighestTemp), int(v.LowestTemp), int(v.AvgTemp)),
-	// 		fmt.Sprintf(" Total Precip %d ", int(v.TotalPrecip)),
-	// 		fmt.Sprintf(" Wind %dmp ↓ ", int(v.AvgWindSpeed)),
-	// 		fmt.Sprintf(" 1/2/3 "),
-	// 	}
-	// 	// I think this is ok or should it be outside of the other for loop
-	// 	for i, v := range cols {
-	// 		if columnWidths[i] < utf8.RuneCountInString(v) {
-	// 			columnWidths[i] = utf8.RuneCountInString(v)
-	// 		}
-	// 	}
-	// 	// key is date
-	// 	colsMap[k] = cols
-	// }
-
-	// // top column seperator
-	// topForecastRow := NewLineBuilder(width)
-	// botForecastRow := NewLineBuilder(width)
-	// topForecastRow.WriteString(leftIntersection)
-	// botForecastRow.WriteString(leftIntersection)
-	// for i, c := range columnWidths {
-	// 	if i != 3 {
-	// 		topForecastRow.WriteString(strings.Repeat(horizontalLine, (c)))
-	// 		topForecastRow.WriteString(topIntersection)
-	// 		botForecastRow.WriteString(strings.Repeat(horizontalLine, (c)))
-	// 		botForecastRow.WriteString(bottomIntersection)
-
-	// 	} else {
-	// 		topForecastRow.WriteString(strings.Repeat(horizontalLine, c))
-	// 		topForecastRow.WriteString(rightIntersection)
-	// 		botForecastRow.WriteString(strings.Repeat(horizontalLine, c))
-	// 		botForecastRow.WriteString(rightIntersection)
-
-	// 	}
-
-	// }
-	// t.table.WriteString(topForecastRow.String())
-	// t.newline()
-
-	// for _, v := range colsMap {
-	// 	columns.WriteString(verticalLine)
-	// 	for i, c := range v {
-	// 		if i != 3 {
-	// 			columns.WriteString(c)
-	// 			columns.WriteString(strings.Repeat(" ", (columnWidths[i] - utf8.RuneCountInString(c))))
-	// 			columns.WriteString(verticalLine)
-
-	// 		} else {
-	// 			columns.WriteString(c)
-	// 			columns.WriteString(verticalLine)
-	// 			if utf8.RuneCountInString(columns.String()) < width {
-	// 				columns.WriteString(strings.Repeat(" ", ((width - utf8.RuneCountInString(columns.String())) - 1)))
-	// 			}
-	// 			// end of table
-	// 			columns.WriteString(verticalLine)
-
-	// 			t.table.WriteString(columns.String())
-	// 			t.newline()
-	// 			t.table.WriteString(botForecastRow.String())
-	// 			t.newline()
-	// 			columns.Reset()
-
-	// 		}
-	// 	}
-	// }
 }
 
 func (t *ForecastTable) newline() {
