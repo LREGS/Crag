@@ -79,13 +79,15 @@ func (m *MetStore) Get() (ForecastPayload, error) {
 }
 
 func (m *MetStore) GetLastUpdate() time.Time {
+	// this always fails if the db is restarted and there is no lastUpdated because it will always return nil
 	res, err := m.Rdb.Get(context.Background(), "LastUpdated").Result()
-	// if err == redis.Nil {
-	// 	log.Printf("last update failed: no entry exists %s", err)
-	// 	// return time.Time{}, ErrorRedis
-	// }
+	if err == redis.Nil {
+		log.Printf("last update failed: no entry exists %s", err)
+		// return time.Time{}, ErrorRedis
+	}
+
 	if err != nil {
-		log.Printf("failed getting last update from redis %s", err)
+		log.Printf("failed getting last update from redis %s", err.Error())
 		return time.Now().Add(-2 * time.Hour)
 	}
 
@@ -104,5 +106,6 @@ func (m *MetStore) SetLastUpdatedNow() error {
 		log.Printf("error storing last updated %s", err)
 		return err
 	}
+	log.Println("last updated should be updated?!")
 	return nil
 }
