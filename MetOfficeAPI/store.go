@@ -62,11 +62,11 @@ func (m *MetStore) Flush() error {
 
 var ErrorRedis = errors.New("redis empty, cannot get last updated")
 
-func (m *MetStore) Get() (ForecastPayload, error) {
+func (m *MetStore) Get(key string) (ForecastPayload, error) {
 
 	var totals ForecastPayload
 
-	res, err := m.Rdb.Get(context.Background(), "orme").Bytes()
+	res, err := m.Rdb.Get(context.Background(), key).Bytes()
 	if err != nil {
 		return totals, err
 	}
@@ -76,6 +76,10 @@ func (m *MetStore) Get() (ForecastPayload, error) {
 	}
 
 	return totals, nil
+}
+
+func (m *MetStore) GetListCrags(ctx context.Context, keys []string) ([]interface{}, error) {=
+	return m.Rdb.MGet(ctx, keys...).Result()
 }
 
 func (m *MetStore) GetLastUpdate() time.Time {
