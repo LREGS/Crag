@@ -122,6 +122,44 @@ func TestAdd(t *testing.T) {
 
 }
 
+func testData() ForecastPayload {
+	return ForecastPayload{
+		LastModelRunTime: "10",
+		ForecastTotals:   map[string]*ForecastTotals{"1": {HighestTemp: 10.00}},
+		Windows: [][]time.Time{
+			{
+				time.Date(2022, 2, 2, 2, 2, 2, 0, time.UTC),
+			},
+		},
+	}
+}
+
+func TestMultiForecasts(t *testing.T) {
+
+	d := testData()
+	p := testData()
+	rdb := NewClient(t)
+	store := NewMetStore(rdb, NewLogger("testlog.txt"))
+
+	if err := store.Add(context.Background(), "data", d); err != nil {
+		t.Fatalf("failed storing %s", err)
+	}
+	if err := store.Add(context.Background(), "data2", p); err != nil {
+		t.Fatalf("failed storing %s", err)
+	}
+
+	k := []string{"data", "data2"}
+
+	td, err := store.MuiltiForecasts(context.Background(), k)
+	if err != nil {
+		t.Fatalf("failed getting forecast %s", err)
+	}
+
+	fmt.Println("redis data")
+	fmt.Println(td)
+
+}
+
 // cases := []struct {
 // 	name        string
 // 	expectedVal map[string]*ForecastTotals

@@ -78,7 +78,7 @@ func (m *MetStore) Get(key string) (ForecastPayload, error) {
 	return totals, nil
 }
 
-func (m *MetStore) GetListCrags(ctx context.Context, keys []string) ([]interface{}, error) {=
+func (m *MetStore) MuiltiForecasts(ctx context.Context, keys []string) ([]interface{}, error) {
 	return m.Rdb.MGet(ctx, keys...).Result()
 }
 
@@ -110,6 +110,5 @@ func (m *MetStore) SetLastUpdatedNow() error {
 		log.Printf("error storing last updated %s", err)
 		return err
 	}
-	log.Println("last updated should be updated?!")
 	return nil
 }
