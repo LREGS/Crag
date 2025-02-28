@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -78,8 +79,28 @@ func (m *MetStore) Get(key string) (ForecastPayload, error) {
 	return totals, nil
 }
 
-func (m *MetStore) MuiltiForecasts(ctx context.Context, keys []string) ([]interface{}, error) {
-	return m.Rdb.MGet(ctx, keys...).Result()
+func (m *MetStore) MuiltiForecasts(ctx context.Context, keys []string) ([]ForecastPayload, error) {
+	cmd := m.Rdb.MGet(ctx, keys...)
+	if cmd.Err() != nil {
+		return nil, cmd.Err()
+	}
+
+	results := cmd.Val()
+
+	forecasts := make([]ForecastPayload, len(results))
+
+	for i, result := range results {
+
+		var forecast ForecastPayload
+		if err := json.Unmarshal(result.([]byte), &forecast); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal %d %s", i, err)
+		}
+
+		forecasts[i] = forecast
+
+	}
+
+	return forecasts, nil
 }
 
 func (m *MetStore) GetLastUpdate() time.Time {
